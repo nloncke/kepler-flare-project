@@ -1,0 +1,91 @@
+10068383  n  m  y  n  m  y  y  m  y  y  m  y  y 
+10125352  m 
+10221013  n 
+10232123  n  m  n 
+10272640  n  n  m  n  m  n  n  m 
+10287248  n  n  n  n  n  n 
+10384962  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n 
+10593759  n  n  n  n  n 
+10619192  n  m  m 
+10747445  m  m 
+10904857  n  n  m  n  n  n  m 
+11017901  n  n  n  n  n 
+11043136  m  m  m  m  m  m  n  n  n 
+11187436  y  m  y  y  m  y 
+11189127  m  m  m 
+11285136  m  n  n  n  n  m  n  m  y 
+11414511  m  m 
+11517719  y  y  y  y  y  y  m 
+11546211  y  y  y  n  y  y  m  y  y  y  m  m  m 
+11548140  y  y  y  y  y  y  y  y  y 
+11551692  y  y  m  y  n  n  y  n  n 
+11554435  n  n  n  n  n  n  n 
+11599264  m 
+11673674  m 
+12023078  n  m  n  n  n  m  n  n 
+12506351  n  n  n  n  n  n  n 
+2445975   y 
+3122985   m  n  n  n  n  y 
+3232859   y  y  m  y 
+3547091   n  n  n  n  n  n  n  n 
+3742855   m 
+3749365   n  m 
+4047631   m  m  m  m  m 
+4743513   n  n  m  n  n  n  n  m  n 
+5122112   m  n  m  m 
+5270698   m  m  n  n  n  n  n  n  n 
+5384802   n 
+5441980   n 
+5450814   m  n  n  y  y  n  m  m  y 
+5475431   y 
+5608566   n  m  m  n  n  m  n  n  m 
+5649956   m  n  m  n 
+5651104   m 
+5794240   m  m 
+5899544   n  n  n  n  n  n  n  n  n 
+6058614   m  n 
+6153672   m  m  n  m  m  m 
+6312534   y 
+6579806   y 
+6603756   n  y  n  n  n  n  y  y  y  y 
+6629332   n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n 
+6866228   n  n  n  n  n  n 
+7199774   n  n  n  n  n  n 
+7255336   y  m  y  y  y  y  n  y 
+7270230   y  m  m 
+7377033   n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n  n 
+7449844   n  n 
+7532973   n 
+757450    y 
+7593110   n  m  n  n  m  n  n  m  n  n 
+7767559   n  n  m  n  n  n  n  n  n  y  n 
+7832356   n  m 
+7877496   m 
+7972785   m 
+8081482   y  y  n  n  n  y  y 
+8180020   n  n 
+8242681   n  n 
+8279765   n  y  n  n  n  m  m  m  y 
+8332986   m  m  n 
+8456679   n  n  m  m  n 
+8488878   y  m 
+8544996   m 
+8848271   n 
+8908102   n 
+8953257   n  n  n  n  n  n  n  n 
+9002237   n  m  n  y 
+9071386   y  n  n 
+9446824   n  n  n  n 
+9451127   n  m  n  n 
+9528420   m 
+9552608   n 
+9574614   m 
+9595827   n  y  m  y 
+9597411   n 
+9674608   m  y  m  n  y 
+9705459   y  n  n  n  n  n  n  n  n  m  n  n 
+9761199   m  y  y 
+9818381   y 
+9834719   n  n  m  n  n 
+9909735   m  y  n  y  m  y  y 
+9967884   n  m  m  m  m 

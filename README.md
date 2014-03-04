@@ -13,6 +13,8 @@ Current task list:
 3 Mar 2014: NL: first set of vetted flares due
       	    LW: first set of features for flagged flares due
 
+            - while vetting, pay close attn to flagging pitfalls
+
 12 Mar 2014: NL + LW: first attempt at using classifier for autovetting
 
 12 - 31 Mar 2014: Look at results of above, refine 

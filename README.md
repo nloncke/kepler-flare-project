@@ -10,12 +10,10 @@ Current task list:
 - LW: think/code up some simple features to calculate on flagged flares
 - LW: send NL some reading material on machine learning as applied to astronomy
 
-3 Mar 2014: NL: first set of vetted flares due
+3 Mar 2014: NL: first set of vetted flares due (while vetting, pay close attn to flagging pitfalls)
       	    LW: first set of features for flagged flares due
 
-            - while vetting, pay close attn to flagging pitfalls
-
-12 Mar 2014: NL + LW: first attempt at using classifier for autovetting
+12 Mar 2014: NL + LW: first attempt at writing classifier for autovetting
 
 12 - 31 Mar 2014: Look at results of above, refine 
 
@@ -26,6 +24,3 @@ Current task list:
 22 Apr 2014: Revised draft due. As above, but with results from classifier and initial conclusions.
 
 6 May 2014: Final Report due to Planets & Life Program
-
-
-

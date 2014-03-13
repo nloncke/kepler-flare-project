@@ -6,7 +6,7 @@ import itertools
 #def shift(l, n):
 #    return l[n:] + l[:n]
 
-def flareFeatures(files, flarfiles)
+def flareFeatures(files, flarfiles):
     """ Given a list of lightcurve files and flag files, 
     compute an array of features for each flare event"""
     # read in list of flare flag files
@@ -19,12 +19,12 @@ def flareFeatures(files, flarfiles)
         myFiles = [line.strip() for line in f]
     f.close()
 
-    flags = getflags(flarfiles)
+    flags = getflags(myFlags)
     
-    for i in range(len(files)):
+    for i in range(len(myFiles)):
 
         # read in lightcurve & normalize to 1
-        lightcurve = np.genfromtext(files[i])
+        lightcurve = np.genfromtxt(myFiles[i])
         time = lightcurve[:, 0]
         flux = lightcurve[:, 1]
         normflux = flux / np.median(flux)
@@ -35,8 +35,10 @@ def flareFeatures(files, flarfiles)
 
         # find boundaries bt events
         bnds = floatflags - np.roll(floatflags, 1)
-        # indices --> having some confusion about tuples vs indices here
+        # isolate individual flare event indices
         tst = np.where(bnds != 1.)
+        tstarr = tst[0] 
+
 
         # compute descriptive stats (skew, kurtosis) for each flare 
         flareSkew = stats.skew(normflux)

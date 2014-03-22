@@ -37,7 +37,7 @@ def getflags(flarfiles):
     flags, outputs a nested list of the indices of potential flaring
     events.
     """
-    for i in range(len(flarfiles)):
+    for i in xrange(len(flarfiles)):
         # read indices from a kid*_flares.txt file
         indcs = np.genfromtxt(flarfiles[i], dtype=int).tolist()
 

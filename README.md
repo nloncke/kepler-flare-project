@@ -14,6 +14,7 @@ Current task list:
       	    LW: first set of features for flagged flares due
 
 12 Mar 2014: NL + LW: first attempt at writing classifier for autovetting
+             NL: fill out flare_feature_calc.py over Spring Break
 
 12 - 31 Mar 2014: Look at results of above, refine 
 

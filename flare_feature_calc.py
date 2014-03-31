@@ -71,8 +71,8 @@ def flareFeatures(files, flarfiles):
         # compute the amplitude of the full lightcurve (w stellar variabiity)
         amp = np.max(normflux) - np.min(normflux)
 
-        # compute the stddev of the flattened lightcurve
-        # (w stellar variability subtracted)
+        # compute the stddev of the flattened lightcurve (w stellar variability subtracted)
+        # smooth over lightcurve and take difference, compute stddev
 
         # update values in flare dictionary
         ltcurve_dict = dict()
@@ -93,7 +93,7 @@ def flareFeatures(files, flarfiles):
 
             # compute (somewhat arbitrary) window around flare
             wind_width = 4 
-            [wind_beg, wind_end] = window(beg, end, width, len(flux))
+            [wind_beg, wind_end] = window(beg, end, wind_width, len(flux))
 
             # skew, kurtosis, mean of 2nd deriv around window
             flareSkew = stats.skew(normflux[wind_beg:wind_end])

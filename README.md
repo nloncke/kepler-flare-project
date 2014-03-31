@@ -18,7 +18,14 @@ Current task list:
 
 12 - 31 Mar 2014: Look at results of above, refine 
 
-1 Apr 2014: Report rough draft due. Should contain a basic intro + methods section, plus any initial results from above. 
+31 Mar 2014: NL will run flare_feature_calc on all lightcurves with flares
+	     NL will write translator to take dictionaries and put into numpy array
+             LW will send scikit-learn tutorials and reading to NL
+
+9 Apr 2014: Initial trial with classifier
+
+
+14 Apr 2014: Report rough draft due. Should contain a basic intro + methods section, plus any initial results from above. 
       	    Figures to include: a full Kepler lightcurve showing flares, close-up of "yes", "no" and "maybe" flagged flares,
 	    	       		screen shot of flareshow vetting plot window? 
 

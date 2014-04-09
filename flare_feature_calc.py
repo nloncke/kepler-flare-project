@@ -22,9 +22,10 @@ def window(beg, end, width, maxindex):
 
 
 def flareFeatures(files, flarfiles):
-    """ Given files containing a list of lightcurve files and flag
-    files, respectively, compute an array of features for each flare
-    event.  Output is a list of dictionaries, structured as follows:
+    """ Given a single file containing a list of lightcurve files (arg
+    files) and flag files (arg flarefiles), respectively, compute an
+    array of features for each flare event.  Output is a list of
+    dictionaries, structured as follows:
 
     [..., {'id':, 'num_events':, 'amplitude':, 'stddev':,
         'flare_features':}, ...]
@@ -71,7 +72,6 @@ def flareFeatures(files, flarfiles):
 
         # compute the amplitude of the full lightcurve (w stellar variabiity)
         amp = np.max(normflux) - np.min(normflux)
-
 
         # update values in flare dictionary
         ltcurve_dict = dict()
@@ -146,7 +146,7 @@ def flareFeatures(files, flarfiles):
         cutT = np.delete(time, list(ignore_in_smoothed))
         cutFlux = np.delete(normflux, list(ignore_in_smoothed))            
         fflux = sp.interp1d(cutT, cutFlux, kind='nearest') # flux function
-        fsmoothed = smooth(fflux(t), stride, window='flat')
+        fsmoothed = smooth(fflux(time), window='flat')
         stddev = stats.tstd(fsmoothed)
         
         # add data for current lightcurve to array
@@ -154,3 +154,44 @@ def flareFeatures(files, flarfiles):
         flareFeatureArray.append(ltcurve_dict)
 
     return flareFeatureArray
+
+
+def dict_to_arr(flareFeatureArray):
+    """ Given a list of dictionaries with the following structure,
+    output an array of flare features ready for scikitlearn.  Each row
+    is a separate flare, each column is a feature.
+
+    Input
+    -----
+    [..., {'id':, 'num_events':, 'amplitude':, 'stddev':,
+        'flare_features':}, ...]
+
+    The value of the flare_features key is a list of dictionaries (one
+    for each event):
+
+    [..., {'skew':, 'kurtosis':, 'second_deriv':, 'slope':,
+    'slope_ratio':, 'passed_midpt_check':, 'has_consec_points':}, ...]
+
+    Output
+    ------
+    [stuff]
+    """
+    formattedFeatures = list()
+
+    # collect flare-wide features first
+    for curve in flareFeatureArray:
+        curvespecs = [curve["amplitude"], curve["stddev"]]
+        # now visit each flare within each lightcurve
+        for flare in curve["flare_features"]:
+            flarespecs = list(curvespecs)   # copy and add to template
+            flarespecs.append(int(flare["has_consec_points"])) # bool
+            flarespecs.append(flare["kurtosis"])
+            flarespecs.append(int(flare["passed_mdpt_check"])) # bool
+            flarespecs.append(flare["second_deriv"])
+            flarespecs.append(flare["skew"])
+            flarespecs.append(flare["slope"])
+            flarespecs.append(flare["slope_ratio"])
+
+            formattedFeatures.append(flarespecs) # add flare data to array
+
+    return np.array(formattedFeatures)

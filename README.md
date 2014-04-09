@@ -21,6 +21,8 @@ Current task list:
 31 Mar 2014: NL will run flare_feature_calc on all lightcurves with flares
 	     NL will write translator to take dictionaries and put into numpy array
              LW will send scikit-learn tutorials and reading to NL
+    - NL thinking of using linear support vector classification based
+      on handy sklearn flowchart
 
 9 Apr 2014: Initial trial with classifier
 

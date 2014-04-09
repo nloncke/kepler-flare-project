@@ -1,8 +1,9 @@
-import numpy as np
 from scipy import stats
 from lightcurves import *
-import itertools
+import numpy as np
 import string
+import scipy.interpolate as sp
+
 #def shift(l, n):
 #    return l[n:] + l[:n]
 
@@ -71,18 +72,16 @@ def flareFeatures(files, flarfiles):
         # compute the amplitude of the full lightcurve (w stellar variabiity)
         amp = np.max(normflux) - np.min(normflux)
 
-        # compute the stddev of the flattened lightcurve (w stellar variability subtracted)
-        # smooth over lightcurve and take difference, compute stddev
 
         # update values in flare dictionary
         ltcurve_dict = dict()
         ltcurve_dict['id'] = kid
         ltcurve_dict['num_events'] = num_events
         ltcurve_dict['amplitude'] = amp
-        # ltcurve_dict['stddev'] = stddev
 
         # collect flare-specific data and create dictionary for each event 
         ltcurve_dict['flare_features'] = list()
+        ignore_in_smoothed = set() # collects pts to be ignored when smoothing
         for j in xrange(len(bnds)):
             # get event indices into normflux array, ready for slicing
             beg = lcflags[bnds[j]]
@@ -91,10 +90,14 @@ def flareFeatures(files, flarfiles):
             else:
                 end = lcflags[bnds[j+1] - 1] + 1
 
-            # compute (somewhat arbitrary) window around flare
+            # compute window around flare for future operations
             wind_width = 4 
             [wind_beg, wind_end] = window(beg, end, wind_width, len(flux))
 
+            # compute window around flare to be deleted when smoothing lc
+            [ignore_beg, ignore_end] = window(beg, end, 2, len(flux))
+            ignore_in_smoothed = ignore_in_smoothed.union(set(range(ignore_beg,ignore_end)))
+            
             # skew, kurtosis, mean of 2nd deriv around window
             flareSkew = stats.skew(normflux[wind_beg:wind_end])
             flareKurt = stats.kurtosis(normflux[wind_beg:wind_end])
@@ -135,6 +138,19 @@ def flareFeatures(files, flarfiles):
             event_dict['has_consec_points'] = has_consec_points
             ltcurve_dict['flare_features'].append(event_dict)
 
+        ######### EXIT THE FLARE LOOP ############
+        ######### ENTER LIGHTCURVE SCOPE ##########
+
+        # compute the stddev of the flattened lightcurve (w stellar variability subtracted)
+        # take out a few points on either side for better interpolation
+        cutT = np.delete(time, list(ignore_in_smoothed))
+        cutFlux = np.delete(normflux, list(ignore_in_smoothed))            
+        fflux = sp.interp1d(cutT, cutFlux, kind='nearest') # flux function
+        fsmoothed = smooth(fflux(t), stride, window='flat')
+        stddev = stats.tstd(fsmoothed)
+        
         # add data for current lightcurve to array
+        ltcurve_dict['stddev'] = stddev
         flareFeatureArray.append(ltcurve_dict)
+
     return flareFeatureArray

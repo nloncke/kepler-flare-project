@@ -27,9 +27,10 @@ Current task list:
 9 Apr 2014: Initial trial with classifier
 
 
-14 Apr 2014: Report rough draft due. Should contain a basic intro + methods section, plus any initial results from above. 
-      	    Figures to include: a full Kepler lightcurve showing flares, close-up of "yes", "no" and "maybe" flagged flares,
-	    	       		screen shot of flareshow vetting plot window? 
+14 Apr 2014: Report rough draft due. 
+       	     Methods section can be test from workflow doc, include description of flare feature calculations and motivation (quantifying how the human eye/mind decides something is a flare), plus any initial results from above. 
+      	    
+	    Figures to include: a full Kepler lightcurve showing flares, close-up of "yes", "no" and "maybe" flagged flares, screen shot of flareshow vetting plot window? 
 
 22 Apr 2014: Revised draft due. As above, but with results from classifier and initial conclusions.
 

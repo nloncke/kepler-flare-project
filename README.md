@@ -25,6 +25,8 @@ Current task list:
       on handy sklearn flowchart
 
 9 Apr 2014: Initial trial with classifier
+      - fix bugs in formatter
+      - adjust second derivative metric
 
 
 14 Apr 2014: Report rough draft due. Should contain a basic intro + methods section, plus any initial results from above. 

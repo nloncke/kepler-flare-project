@@ -102,8 +102,9 @@ def flareFeatures(files, flarfiles):
             flareSkew = stats.skew(normflux[wind_beg:wind_end])
             flareKurt = stats.kurtosis(normflux[wind_beg:wind_end])
             first_deriv = np.gradient(normflux[wind_beg:wind_end])
-            second_deriv = np.mean(np.gradient(first_deriv))
 
+            # around the flare (ie, before and after like slope)
+            second_deriv = np.mean(np.gradient(first_deriv))
             # compute the abs value of the slope around the flare
             slope = np.abs((normflux[wind_end]-normflux[wind_beg]) /
                            (time[wind_end]-time[wind_beg]))
@@ -138,13 +139,13 @@ def flareFeatures(files, flarfiles):
             event_dict['has_consec_points'] = has_consec_points
             ltcurve_dict['flare_features'].append(event_dict)
 
-        ######### EXIT THE FLARE LOOP ############
+        ######### EXIT THE FLARE LOOP #############
         ######### ENTER LIGHTCURVE SCOPE ##########
 
         # compute the stddev of the flattened lightcurve (w stellar variability subtracted)
         # take out a few points on either side for better interpolation
         cutT = np.delete(time, list(ignore_in_smoothed))
-        cutFlux = np.delete(normflux, list(ignore_in_smoothed))            
+        cutFlux = np.delete(normflux, list(ignore_in_smoothed))
         fflux = sp.interp1d(cutT, cutFlux, kind='nearest') # flux function
         fsmoothed = smooth(fflux(time), window='flat')
         stddev = stats.tstd(fsmoothed)
@@ -178,6 +179,7 @@ def dict_to_arr(flareFeatureArray):
     """
     formattedFeatures = list()
 
+    # add number of flares per lightcurve to the features
     # collect flare-wide features first
     for curve in flareFeatureArray:
         curvespecs = [curve["amplitude"], curve["stddev"]]

@@ -1,5 +1,5 @@
 Kepler Flare Project
-===============
+====================
 
 This repo contains plans + code for tagging/vetting stellar flares in Kepler data, developed by 
 Nicole Loncke (Princeton '15) & Lucianne Walkowicz (Dept of Astrophysical Sciences). 
@@ -36,6 +36,11 @@ Current task list:
        	     a flare), plus any initial results from above.
       	    
 	    Figures to include: a full Kepler lightcurve showing flares, close-up of "yes", "no" and "maybe" flagged flares, screen shot of flareshow vetting plot window? 
+
+21 Apr 2014: Run through iris classifier with real flare data: compare
+   accuracy against test set (split 200 labelled data in half).  Write
+   additional formatter to add labels to the data to feed into
+   classifier.  Update often!
 
 22 Apr 2014: Revised draft due. As above, but with results from classifier and initial conclusions.
 

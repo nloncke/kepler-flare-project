@@ -25,12 +25,15 @@ Current task list:
       on handy sklearn flowchart
 
 9 Apr 2014: Initial trial with classifier
-      - fix bugs in formatter
-      - adjust second derivative metric
+      - fix bugs in formatter.............DONE 
+      - adjust second derivative metric...
 
 
 14 Apr 2014: Report rough draft due. 
-       	     Methods section can be test from workflow doc, include description of flare feature calculations and motivation (quantifying how the human eye/mind decides something is a flare), plus any initial results from above. 
+       	     Methods section can be test from workflow doc, include
+       	     description of flare feature calculations and motivation
+       	     (quantifying how the human eye/mind decides something is
+       	     a flare), plus any initial results from above.
       	    
 	    Figures to include: a full Kepler lightcurve showing flares, close-up of "yes", "no" and "maybe" flagged flares, screen shot of flareshow vetting plot window? 
 

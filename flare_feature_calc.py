@@ -105,6 +105,7 @@ def flareFeatures(files, flarfiles):
 
             # around the flare (ie, before and after like slope)
             second_deriv = np.mean(np.gradient(first_deriv))
+
             # compute the abs value of the slope around the flare
             slope = np.abs((normflux[wind_end]-normflux[wind_beg]) /
                            (time[wind_end]-time[wind_beg]))
@@ -177,23 +178,25 @@ def dict_to_arr(flareFeatureArray):
     ------
     [stuff]
     """
-    formattedFeatures = list()
+
+    data = list()
 
     # add number of flares per lightcurve to the features
     # collect flare-wide features first
     for curve in flareFeatureArray:
-        curvespecs = [curve["amplitude"], curve["stddev"]]
+        curvespecs = [curve["amplitude"], curve["stddev"], curve["num_events"]]
+
         # now visit each flare within each lightcurve
         for flare in curve["flare_features"]:
             flarespecs = list(curvespecs)   # copy and add to template
             flarespecs.append(int(flare["has_consec_points"])) # bool
             flarespecs.append(flare["kurtosis"])
-            flarespecs.append(int(flare["passed_mdpt_check"])) # bool
+            flarespecs.append(int(flare["passed_midpt_check"])) # bool
             flarespecs.append(flare["second_deriv"])
             flarespecs.append(flare["skew"])
             flarespecs.append(flare["slope"])
             flarespecs.append(flare["slope_ratio"])
 
-            formattedFeatures.append(flarespecs) # add flare data to array
+            data.append(flarespecs) # add flare data to array_midpt
 
-    return np.array(formattedFeatures)
+    return np.array(data)

@@ -158,10 +158,13 @@ def flareFeatures(files, flarfiles):
     return flareFeatureArray
 
 
-def dict_to_arr(flareFeatureArray):
+def feat_dict_to_bunch(flareFeatureArray, vetfile=None):
     """ Given a list of dictionaries with the following structure,
-    output an array of flare features ready for scikitlearn.  Each row
-    is a separate flare, each column is a feature.
+    output a bunch of flare features ready for scikitlearn.  Output
+    has dimensions num_samples x num_features.  Each sample is an
+    individual flare, each column is a feature (statistic).  If
+    vetfile is provided, assumes that all the flares in the feature
+    array have been vetted with responses recorded in vetfile.
 
     Input
     -----
@@ -179,24 +182,69 @@ def dict_to_arr(flareFeatureArray):
     [stuff]
     """
 
-    data = list()
+    bunch = dict()  # the entire bundle 
+    data = list()   # data array of features
+    if vetfile: # we got labelled data
+        all_vets = vetfile_to_dict(vetfile)
+        target = list()
 
-    # add number of flares per lightcurve to the features
     # collect flare-wide features first
     for curve in flareFeatureArray:
-        curvespecs = [curve["amplitude"], curve["stddev"], curve["num_events"]]
+        curvespecs = [curve["amplitude"], curve["num_events"], curve["stddev"]]
 
         # now visit each flare within each lightcurve
         for flare in curve["flare_features"]:
             flarespecs = list(curvespecs)   # copy and add to template
-            flarespecs.append(int(flare["has_consec_points"])) # bool
-            flarespecs.append(flare["kurtosis"])
-            flarespecs.append(int(flare["passed_midpt_check"])) # bool
-            flarespecs.append(flare["second_deriv"])
-            flarespecs.append(flare["skew"])
-            flarespecs.append(flare["slope"])
-            flarespecs.append(flare["slope_ratio"])
+            feats = [int(flare["has_consec_points"]), flare["kurtosis"],
+                     int(flare["passed_midpt_check"]), flare["second_deriv"],
+                     flare["skew"], flare["slope"], flare["slope_ratio"]]
+            flarespecs.extend(feats) # join flare with curve template
+            data.append(flarespecs)  # add flare data to array
 
-            data.append(flarespecs) # add flare data to array_midpt
+        if vetfile: # if labelled data
+            default = ['m'] * curve["num_events"]
+            vet = all_vets.get(curve["id"], default) # array of ynm for the lightcurve
+            target.extend(vet)
 
-    return np.array(data)
+    # package things nicely
+    bunch["data"] = np.array(data)
+    bunch["feature_names"] = ["amplitude","num_events","stddev",
+                              "has_consec_points","kurtosis",
+                              "passed_midpt_check", "second_deriv",
+                              "skew", "slope", "slope_ratio"]
+    if vetfile:
+        bunch["target"] = vets_to_ints(target)
+        bunch["target_names"] = np.array(['n','y','m'])
+
+    return bunch
+
+
+def vetfile_to_dict(vetfile):
+    """Given vetfile in the format specified in lightcurves.py, this
+    function converts the responses to a dictionary with Kepler IDs as
+    keys and lists of y/n/m as values.
+    """
+    responses = dict()
+    with open(vetfile, 'r') as f:
+        for line in f:
+            tokens = line.split()
+            if tokens[0].isdigit():
+                responses[tokens[0]] = tokens[1:]
+            else:
+                # is there a way to issue a warning and continue with
+                # processing the rest of the lines in the file?
+                raise ValueError('{} is not a valid Kepler id.'.format(tokens[0]))
+    return responses
+
+
+def vets_to_ints(target):
+    """ Prepares target array of ynm to integers:
+    n -> 0
+    y -> 1
+    m -> 2
+    """
+    vetmap = {'n': 0, 'y': 1, 'm': 2}
+    mapped = list(target)
+    for i in xrange(len(mapped)):
+        mapped[i] = vetmap.get(mapped[i])
+    return np.array(mapped)

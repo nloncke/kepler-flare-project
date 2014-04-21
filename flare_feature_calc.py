@@ -272,4 +272,5 @@ def run_classifier(files, flarefiles, vetfile):
     clf.fit(bunch["data"], bunch["target"])
     predictions = clf.predict(bunch["data"])
     hits = predictions == bunch["target"]
+
     return sum(hits) / float(len(hits))

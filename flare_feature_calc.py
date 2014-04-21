@@ -1,3 +1,4 @@
+from sklearn import svm
 from scipy import stats
 from lightcurves import *
 import numpy as np
@@ -248,3 +249,27 @@ def vets_to_ints(target):
     for i in xrange(len(mapped)):
         mapped[i] = vetmap.get(mapped[i])
     return np.array(mapped)
+
+
+def overlap(dictlist, vetfile):
+    """ Collects the dictionaries in dictlist containing key-value
+    pairs id: kid, where 'kid' is the first token per line in vetfile.
+    """
+    with open(vetfile, 'r') as f:
+        kids = [line.split()[0] for line in f]
+    return [item for item in dictlist if item["id"] in kids]
+
+
+def run_classifier(files, flarefiles, vetfile):
+    """ Script for training classifier and testing on training inputs
+    """
+    allFeats = flareFeatures(files, flarefiles)
+    data = overlap(allFeats, vetfile)
+    bunch = feat_dict_to_bunch(data, vetfile)
+
+    # train classifier, test on labelled data
+    clf = svm.SVC()
+    clf.fit(bunch["data"], bunch["target"])
+    predictions = clf.predict(bunch["data"])
+    hits = predictions == bunch["target"]
+    return sum(hits) / float(len(hits))

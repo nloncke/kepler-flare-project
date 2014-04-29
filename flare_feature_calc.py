@@ -4,6 +4,7 @@ from lightcurves import *
 import numpy as np
 import string
 import scipy.interpolate as sp
+from sklearn.metrics import classification_report
 
 #def shift(l, n):
 #    return l[n:] + l[:n]
@@ -260,7 +261,7 @@ def overlap(dictlist, vetfile):
     return [item for item in dictlist if item["id"] in kids]
 
 
-def run_classifier(files, flarefiles, vetfile):
+def run_classifier(files, flarefiles, vetfile, classtype="linear"):
     """ Script for training classifier and testing on training inputs
     """
     allFeats = flareFeatures(files, flarefiles)
@@ -268,9 +269,12 @@ def run_classifier(files, flarefiles, vetfile):
     bunch = feat_dict_to_bunch(data, vetfile)
 
     # train classifier, test on labelled data
-    clf = svm.SVC()
+    clf = svm.SVC(kernel=classtype)
     clf.fit(bunch["data"], bunch["target"])
     predictions = clf.predict(bunch["data"])
-    hits = predictions == bunch["target"]
+    # hits = predictions == bunch["target"]
 
-    return sum(hits) / float(len(hits))
+    print classification_report(bunch["target"],predictions,
+                                target_names=bunch["target_names"])
+
+    # return {"bunch": bunch, "predictions": predictions}

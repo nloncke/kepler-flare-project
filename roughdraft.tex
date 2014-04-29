@@ -168,6 +168,8 @@ providing those about which you would like to find more information
 % learning?  relevant features are captured in flare_feature_calc and
 % then sklearn runs with it: Support Vector Classifier, linear kernel
 
+% generate some classifier reports and include them in the pdf
+% try random forest, some other classifiers from LW link
 \section{Machine Learning}
 \label{sec:ml}
 
@@ -193,17 +195,65 @@ metrics.
   with great stellar variability tend to be more magnetically active
   than those without.  We expect high light curve amplitude to
   correlate with real flares.
-\item \emph{number of events}:  Those 
-\item \emph{standard deviation}:
-\item \emph{consecutive points}:
-\item \emph{kurtosis}:
-\item \emph{midpoint check}:
+\item \emph{number of events}: Light curves that have many flagged
+  events tend to have real flares, so we expect a high number of
+  events to correlate with real flares.
+\item \emph{standard deviation}: The standard deviation of the entire
+  lightcurve with stellar variability subtracted.  \textbf{Though I'm not
+  exactly sure of the direct bearing of this metric on the likelihood
+  of the event, it seemed like it could be a useful metric.}
+\item \emph{consecutive points}: Sometimes there are gaps in the
+  Kepler data.  Kepler must rotate and point its antenna towards Earth
+  to send its lightcurve data roughly every month.  When the satellite
+  begins recording again, there may be a sudden increase in brightness
+  that resembles a flare but isn't.  In order to avoid marking these
+  as true flares we check whether the time intervals are evenly spaced
+  across the event.
+\item \emph{kurtosis}: The kurtosis measures the ``peakedness'' of a
+  flare event.  A sharp increase and decrease in brightness is likely
+  to indicate a true flare, though the decay ought to be more gradual
+  than the incline.
+\item \emph{midpoint check}: It's also 
 \item \emph{second derivative}:
 \item \emph{skew}:
 \item \emph{slope}:
 \item \emph{slope ratio}:
 \end{enumerate}
+These data were gathered for potential flaring events that we labelled
+by-eye to form a training set.
 
+\subsection{Initial Classification Performance}
+\label{sec:class}
+We tried several different classification techniques:
+
+\subsubsection{Support Vector Classification}
+\label{sec:linear}
+For our first attempt we used support vector classification as
+packaged in \verb|sklearn.svm.SVC|.  The default is to use a radial
+basis function (RBF) kernel.
+\begin{table}
+  \centering
+  \begin{tabular}[h!]{c|c c c c}
+                & precision &recall &f1-score &support \\ \hline
+    n           & 0.73      &0.81   &0.77     &57      \\
+    y           & 0.74      &0.89   &0.81     &61      \\
+    m           & 0.71      &0.31   &0.43     &32      \\ \hline
+    avg / total & 0.73      &0.73   &0.71     &150     \\
+  \end{tabular}
+  \caption{Reconstructing the training set (150 flares total) with RBF kernel.}
+
+  \begin{tabular}[h!]{c|c c c c}
+                & precision &recall &f1-score &support \\ \hline
+    n           & 0.61      &0.88   &0.72     &60      \\
+    y           & 0.62      &0.60   &0.61     &65      \\
+    m           & 0.33      &0.12   &0.18     &40      \\ \hline
+    avg / total & 0.55      &0.59   &0.55     &165     \\
+  \end{tabular}
+  \caption{Classification report for predicting the testing set
+    with RBF kernel.}
+
+
+\end{table}
 
 \section{Conclusion}
 \label{sec:conc}

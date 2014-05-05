@@ -80,7 +80,7 @@ need to start using these tools.
 \subsection{Plotting}
 \label{sec:basic}
 
-If your aim is simply to generate arrays of the lightcurve data ---
+If your aim is simply to generate arrays of the light curve data ---
 one array for time, another for mean-normalized flux --- then use
 \verb|ltcurve()|.  This function takes as its primary argument a
 string of the name of the file containing the Kepler data and returns
@@ -149,7 +149,7 @@ names of the files containing the flags.
 After evaluating the marked events by eye, quantifying data about the
 remaining candidates is the next step.  Assuming that you used
 \verb|flareshow()| for vetting, you now have two output files for the
-set of lightcurve data.  Use the helper function \verb|getEvents()|,
+set of light curve data.  Use the helper function \verb|getEvents()|,
 which reads from these output files to pare down your list of flags to
 only those that have been marked with 'y' or 'm' depending on how you
 set the kwargs.
@@ -179,7 +179,7 @@ of time.  The flare detection program that produces the flare flags is
 trained to recognize some data metrics but does not correctly identify
 events with high accuracy.  Our human brains allow us to do the same
 thing but with more nuance.  If we could write a program to recognize
-the same patterns that humans so easily detect in the lightcurves then
+the same patterns that humans so easily detect in the light curves then
 we could nearly entirely automate the vetting process.  To accomplish
 this goal, we trained a classifier with a handful of metrics from each
 potential flare event and their respective light curves.
@@ -199,25 +199,43 @@ metrics.
   events tend to have real flares, so we expect a high number of
   events to correlate with real flares.
 \item \emph{standard deviation}: The standard deviation of the entire
-  lightcurve with stellar variability subtracted.  \textbf{Though I'm not
-  exactly sure of the direct bearing of this metric on the likelihood
-  of the event, it seemed like it could be a useful metric.}
+  light curve with stellar variability subtracted.  \textbf{Though I'm
+    not exactly sure of the direct bearing of this metric on the
+    likelihood of the event, it seemed like it could be a useful
+    metric.}
 \item \emph{consecutive points}: Sometimes there are gaps in the
   Kepler data.  Kepler must rotate and point its antenna towards Earth
-  to send its lightcurve data roughly every month.  When the satellite
-  begins recording again, there may be a sudden increase in brightness
-  that resembles a flare but isn't.  In order to avoid marking these
-  as true flares we check whether the time intervals are evenly spaced
-  across the event.
+  to send its light curve data roughly every month.  When the
+  satellite begins recording again, there may be a sudden increase in
+  brightness that resembles a flare but isn't.  In order to avoid
+  marking these as true flares we check whether the time intervals are
+  evenly spaced across the event.
 \item \emph{kurtosis}: The kurtosis measures the ``peakedness'' of a
   flare event.  A sharp increase and decrease in brightness is likely
   to indicate a true flare, though the decay ought to be more gradual
   than the incline.
-\item \emph{midpoint check}: It's also 
-\item \emph{second derivative}:
-\item \emph{skew}:
-\item \emph{slope}:
-\item \emph{slope ratio}:
+\item \emph{midpoint check}: A stellar flare typically requires a
+  monotonic increase then monotonic decrease in brightness.  Ensuring
+  that the middle point is higher than the beginning and end points of
+  the event is one way to rule out falsely marked events.
+\item \emph{second derivative}: Smoothing over the flagged event, is
+  the light curve locally concave up or down?  The second derivative
+  of the window around the potential flare can capture the shape of a
+  light curve in the neighborhood of an event.
+\item \emph{skew}: Skewness is a measure of the asymmetry of the event
+  brightness---is the flare left-leaning or right-leaning?  Because
+  flares are characterized by very quick increases in brightness
+  followed by a slow decay, left-leaning events (and therefore those
+  with negative skew) are more likely to be true flares.
+\item \emph{slope}: Is the brightness of the star generally increasing
+  or decreasing at the time of the event?  This metric measures the
+  slope of the line formed by connecting the point at the beginning of
+  the flare window to the point at the end of the flare window.
+  time of the event?
+\item \emph{slope ratio}: We also compute the ratio of the light
+  curve's slope just before the event begins and the slope just after
+  it ends.  We hope to capture more information about the local shape
+  of the light curve with this metric.
 \end{enumerate}
 These data were gathered for potential flaring events that we labelled
 by-eye to form a training set.

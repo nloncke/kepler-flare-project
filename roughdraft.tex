@@ -2,6 +2,7 @@
 \usepackage[margin=1.3in]{geometry}
 % \usepackage{showframe}
 \usepackage{caption}
+\usepackage{float}
 \usepackage{enumerate}
 \usepackage{array}
 
@@ -186,8 +187,7 @@ potential flare event and their respective light curves.
 
 \subsection{Training}
 \label{sec:train}
-We used Python's \verb|sklearn| package for our machine learning
-framework.  Our first task was to gather quantitative data about the
+ Our first task was to gather quantitative data about the
 stellar flares to feed into the classifier.  In total we use 10
 metrics.
 \begin{enumerate}[(a)]
@@ -242,16 +242,17 @@ by-eye to form a training set.
 
 \subsection{Initial Classification Performance}
 \label{sec:class}
-We tried several different classification techniques:
+We tried a few different classification techniques.  We used Python's
+\verb|sklearn| package for our machine learning framework.
 
 \subsubsection{Support Vector Classification}
-\label{sec:linear}
+\label{sec:svc}
 For our first attempt we used support vector classification as
-packaged in \verb|sklearn.svm.SVC|.  The default is to use a radial
-basis function (RBF) kernel.
+packaged in \verb|sklearn.svm.SVC|.  We initially used a radial basis
+function (RBF) kernel.
 \begin{table}
   \centering
-  \begin{tabular}[h!]{c|c c c c}
+  \begin{tabular}[!htbp]{c|c c c c}
                 & precision &recall &f1-score &support \\ \hline
     n           & 0.73      &0.81   &0.77     &57      \\
     y           & 0.74      &0.89   &0.81     &61      \\
@@ -260,7 +261,7 @@ basis function (RBF) kernel.
   \end{tabular}
   \caption{Reconstructing the training set (150 flares total) with RBF kernel.}
 
-  \begin{tabular}[h!]{c|c c c c}
+  \begin{tabular}[!htbp]{c|c c c c}
                 & precision &recall &f1-score &support \\ \hline
     n           & 0.61      &0.88   &0.72     &60      \\
     y           & 0.62      &0.60   &0.61     &65      \\
@@ -269,8 +270,37 @@ basis function (RBF) kernel.
   \end{tabular}
   \caption{Classification report for predicting the testing set
     with RBF kernel.}
+\end{table}
 
+We also tried using a linear kernel, but this performed worse.
 
+\subsubsection{Random Forest Classifier}
+\label{sec:randfor}
+Next we attempted the same task using random forest classification,
+as packaged in \verb|sklearn.ensemble|.  While it performed superbly
+on the training set, it performed about average on the training set.
+
+\begin{table}
+  \centering
+  \begin{tabular}[!htbp]{c|c c c c}
+                & precision &recall &f1-score &support \\ \hline
+    n           & 1.00      &0.92   &0.99     &57      \\
+    y           & 0.95      &1.00   &0.98     &61      \\
+    m           & 1.00      &0.94   &0.97     &32      \\ \hline
+    avg / total & 0.98      &0.98   &0.98     &150     \\
+  \end{tabular}
+  \caption{Reconstructing the training set (150 flares total) with
+    Random Forest classification method.}
+
+  \begin{tabular}[!htbp]{c|c c c c}
+                & precision &recall &f1-score &support \\ \hline
+    n           & 0.63      &0.77   &0.69     &60      \\
+    y           & 0.60      &0.72   &0.66     &65      \\
+    m           & 0.29      &0.10   &0.15     &40      \\ \hline
+    avg / total & 0.54      &0.59   &0.55     &165     \\
+  \end{tabular}
+  \caption{Classification report for predicting the testing set
+    with the Random Forest classification method.}
 \end{table}
 
 \section{Conclusion}

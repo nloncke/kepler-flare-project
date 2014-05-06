@@ -21,19 +21,22 @@ The Kepler Mission is designed to survey our galaxy in the hopes of
 discovering planets in or near the habitable zone of their stars and
 determine how many of the billions of stars in our galaxy have such
 planets. It essentially stares at a relatively small portion of the
-sky for a long time to gather brightness data about these stars.
-
+sky for days at a time to gather brightness data about these stars.
 In addition to planet detection, this data can be used to gather
 properties about the stars themselves.  In this paper we are concerned
-with the flaring behaviors of these nearby stars and their effect on
-any orbiting planets.
+with the flaring behaviors of these nearby stars and techniques we can
+use to better determine their effect on any orbiting planets.
 
 
 \section{Using the Tools}
 \label{sec:tools}
-
-In this section I describe the tools I've written to facilitate the
-vetting process.
+In order to gather data about to flares, it is necessary to first
+correctly identify the stellar flares within the Kepler data.  These
+events have a very distinct shape and thus can be picked out from the
+light curve data by a program with rudimentary accuracy.  We have
+written such a program in IDL and must manually verify all of the
+events it flags as flares.  To do so, we have also written a Python
+module, \verb|lightcurves|, to aid in the vetting process.
 
 \subsection{Formatting}
 \label{sec:format}
@@ -80,7 +83,6 @@ need to start using these tools.
 
 \subsection{Plotting}
 \label{sec:basic}
-
 If your aim is simply to generate arrays of the light curve data ---
 one array for time, another for mean-normalized flux --- then use
 \verb|ltcurve()|.  This function takes as its primary argument a
@@ -99,7 +101,6 @@ event flags\footnote{You can generate these flags using
   \texttt{getflags()} and passing it a list of the names of the files
   holding the flare flags.}, you may use the \verb|flags| kwarg to
 overplot the potential flares.
-
 
 \subsection{Vetting}
 \label{sec:vet}
@@ -164,33 +165,29 @@ function assumes you have vetted the flags already and are only
 providing those about which you would like to find more information
 (ie, you have used \verb|getEvents()|).
 
-% sections: intro (what even is kepler), general progress to date:
-% vetting code, yay human eye but boo to slowness, why not machine
-% learning?  relevant features are captured in flare_feature_calc and
-% then sklearn runs with it: Support Vector Classifier, linear kernel
 
-% generate some classifier reports and include them in the pdf
-% try random forest, some other classifiers from LW link
 \section{Machine Learning}
 \label{sec:ml}
 
 After creating the tools for by-eye vetting, the major bottleneck for
 data analysis was just that---as a human, vetting manually takes a lot
-of time.  The flare detection program that produces the flare flags is
-trained to recognize some data metrics but does not correctly identify
-events with high accuracy.  Our human brains allow us to do the same
-thing but with more nuance.  If we could write a program to recognize
-the same patterns that humans so easily detect in the light curves then
-we could nearly entirely automate the vetting process.  To accomplish
-this goal, we trained a classifier with a handful of metrics from each
-potential flare event and their respective light curves.
+of time.  The IDL flare detection program that produces the flare
+flags is trained to recognize some data metrics but does not correctly
+identify events with high accuracy.  Our human brains allow us to do
+the same thing but with more nuance.  If we could write another
+program to recognize the same patterns that humans so easily detect in
+the light curves then we could nearly entirely automate the
+data-gathering process---from the raw light curve to having
+information about flares with high confidence.  To accomplish this
+goal, we employed machine learning techniques to train a variety of
+classifiers on metrics from each potential flare event and their
+respective light curves.
 
 \subsection{Training}
 \label{sec:train}
- Our first task was to gather quantitative data about the
-stellar flares to feed into the classifier.  In total we use 10
-metrics.
-\begin{enumerate}[(a)]
+Our first task was to gather quantitative data about the stellar
+flares to feed into the classifier.  In total we use 10 metrics.
+\begin{enumerate}[(1)]
 \item \emph{amplitude}: the range of the entire light curve.  Stars
   with great stellar variability tend to be more magnetically active
   than those without.  We expect high light curve amplitude to
@@ -199,10 +196,9 @@ metrics.
   events tend to have real flares, so we expect a high number of
   events to correlate with real flares.
 \item \emph{standard deviation}: The standard deviation of the entire
-  light curve with stellar variability subtracted.  \textbf{Though I'm
-    not exactly sure of the direct bearing of this metric on the
-    likelihood of the event, it seemed like it could be a useful
-    metric.}
+  light curve with stellar variability subtracted.  It may be useful
+  to feed the classifier more information about the light curve at
+  large.
 \item \emph{consecutive points}: Sometimes there are gaps in the
   Kepler data.  Kepler must rotate and point its antenna towards Earth
   to send its light curve data roughly every month.  When the
@@ -237,76 +233,170 @@ metrics.
   it ends.  We hope to capture more information about the local shape
   of the light curve with this metric.
 \end{enumerate}
-These data were gathered for potential flaring events that we labelled
-by-eye to form a training set.
+These data were gathered for 315 potential flaring events that we had
+previously labelled by-eye.  Using these samples we formed a training
+set of 150 events and a test set of 165 events.
 
-\subsection{Initial Classification Performance}
+\subsection{Classification Performance}
 \label{sec:class}
-We tried a few different classification techniques.  We used Python's
-\verb|sklearn| package for our machine learning framework.
+We use Python's scikit-learn package for our machine learning
+framework.  While it comes equipped with a suite of regression,
+clustering, and dimensionality-reduction tools, we are only concerned
+with classification.  Our target classes are 'y' for definitely a
+flare, 'n' for not a flare, and 'm' for any indeterminate events.
+
+To quantitatively compare the classifiers, it is important that we
+define a few statistics related to their performance.  We say the
+\emph{precision}, or \emph{efficiency}, is the fraction of events
+classified as a given type ('y', 'n', 'm') that are truly of that
+type.  The \emph{recall}, or \emph{completeness} of the classifier is
+the fraction of objects that are truly of a given type that it
+classifies as that type.  The $F_1$ score is a weighted average of
+recall and precision.
+
+Though we ideally seek high scores for both precision and recall, for
+our purposes precision is the more important metric.  Because we have
+many events in our dataset it is better to correctly identify a small
+number of flares than to find many true flares at the expense of false
+positives.
 
 \subsubsection{Support Vector Classification}
 \label{sec:svc}
 For our first attempt we used support vector classification as
-packaged in \verb|sklearn.svm.SVC|.  We initially used a radial basis
-function (RBF) kernel.
+packaged in \verb|sklearn.svm.SVC|. We initially used a linear kernel
+SVM. This is a simple classification method which assumes that there
+is a hyperplane that separates the data in the feature space, which is
+10-dimensional in our case.  We trained our linear SVC on 150 flare
+events and then used it to predict the status of 165 events.  This
+classifier had a precision of 63\% for classifying true flare events.
+While the results were better than a coin toss, we sought to improve
+the classifier performance.
 \begin{table}
   \centering
   \begin{tabular}[!htbp]{c|c c c c}
-                & precision &recall &f1-score &support \\ \hline
-    n           & 0.73      &0.81   &0.77     &57      \\
-    y           & 0.74      &0.89   &0.81     &61      \\
-    m           & 0.71      &0.31   &0.43     &32      \\ \hline
-    avg / total & 0.73      &0.73   &0.71     &150     \\
+        & precision &recall &$F_1$-score &support \\ \hline
+    n   & 0.62      &0.87   &0.72     &60      \\
+    y   & 0.63      &0.69   &0.66     &65      \\
+    m   & 0.50      &0.12   &0.20     &40      \\ \hline
+    avg & 0.60      &0.62   &0.57     &165     \\
   \end{tabular}
-  \caption{Reconstructing the training set (150 flares total) with RBF kernel.}
-
-  \begin{tabular}[!htbp]{c|c c c c}
-                & precision &recall &f1-score &support \\ \hline
-    n           & 0.61      &0.88   &0.72     &60      \\
-    y           & 0.62      &0.60   &0.61     &65      \\
-    m           & 0.33      &0.12   &0.18     &40      \\ \hline
-    avg / total & 0.55      &0.59   &0.55     &165     \\
-  \end{tabular}
-  \caption{Classification report for predicting the testing set
-    with RBF kernel.}
+  \caption{Linear kernel performance with the test set.}
+  \label{tab:lintest}
 \end{table}
 
-We also tried using a linear kernel, but this performed worse.
+Sometimes the data cannot be linearly separated within the given
+feature-space.  Alternate SVM kernels implicitly map the data to
+higher dimensions to find a separating hyperplane.  To do that, we
+incorporated the popular radial basis function (RBF) kernel into our
+support vector machine model.  While support vector classification
+with an RBF kernel does decently when predicting the flares it has
+already seen, it does not outperform when predicting unseen events,
+which is ultimately what is important. The results are charted in
+tables \ref{tab:rbftrain} and \ref{tab:rbftest}.
+
+\begin{table}
+  \centering
+  \begin{tabular}[!htbp]{c|c c c c}
+        & precision &recall &$F_1$-score &support \\ \hline
+    n   & 0.73      &0.81   &0.77     &57      \\
+    y   & 0.74      &0.89   &0.81     &61      \\
+    m   & 0.71      &0.31   &0.43     &32      \\ \hline
+    avg & 0.73      &0.73   &0.71     &150     \\
+  \end{tabular}
+  \caption{Reconstructing the training set with RBF kernel.}
+  \label{tab:rbftrain}
+
+  \begin{tabular}[!htbp]{c|c c c c}
+        & precision &recall &$F_1$-score &support \\ \hline
+    n   & 0.61      &0.88   &0.72     &60      \\
+    y   & 0.62      &0.60   &0.61     &65      \\
+    m   & 0.33      &0.12   &0.18     &40      \\ \hline
+    avg & 0.55      &0.59   &0.55     &165     \\
+  \end{tabular}
+  \caption{RBF kernel performance on the testing set.}
+  \label{tab:rbftest}
+\end{table}
+
 
 \subsubsection{Random Forest Classifier}
 \label{sec:randfor}
-Next we attempted the same task using random forest classification,
-as packaged in \verb|sklearn.ensemble|.  While it performed superbly
-on the training set, it performed about average on the training set.
+We performed the same task using random forest classification, as
+packaged in \verb|sklearn.ensemble|.  The algorithm constructs many
+decision trees based on the inputs it sees during the training phase,
+then uses those trees to predict the categories of unseen
+samples. While it performed superbly on the training set, it performed
+no better than our support vector machines on the training set.
 
 \begin{table}
   \centering
   \begin{tabular}[!htbp]{c|c c c c}
-                & precision &recall &f1-score &support \\ \hline
-    n           & 1.00      &0.92   &0.99     &57      \\
-    y           & 0.95      &1.00   &0.98     &61      \\
-    m           & 1.00      &0.94   &0.97     &32      \\ \hline
-    avg / total & 0.98      &0.98   &0.98     &150     \\
+       & precision &recall &$F_1$-score &support \\ \hline
+    n  & 1.00      &0.92   &0.99     &57      \\
+    y  & 0.95      &1.00   &0.98     &61      \\
+    m  & 1.00      &0.94   &0.97     &32      \\ \hline
+    avg& 0.98      &0.98   &0.98     &150     \\
   \end{tabular}
-  \caption{Reconstructing the training set (150 flares total) with
-    Random Forest classification method.}
+  \caption{Reconstructing the training set with random forest classification method.}
 
   \begin{tabular}[!htbp]{c|c c c c}
-                & precision &recall &f1-score &support \\ \hline
-    n           & 0.63      &0.77   &0.69     &60      \\
-    y           & 0.60      &0.72   &0.66     &65      \\
-    m           & 0.29      &0.10   &0.15     &40      \\ \hline
-    avg / total & 0.54      &0.59   &0.55     &165     \\
+       & precision &recall &$F_1$-score &support \\ \hline
+    n  & 0.63      &0.77   &0.69     &60      \\
+    y  & 0.60      &0.72   &0.66     &65      \\
+    m  & 0.29      &0.10   &0.15     &40      \\ \hline
+    avg& 0.54      &0.59   &0.55     &165     \\
   \end{tabular}
-  \caption{Classification report for predicting the testing set
-    with the Random Forest classification method.}
+  \caption{Random forest method performance on the testing set.}
 \end{table}
+
+\subsubsection{Linear Discriminant Analysis}
+\label{sec:lda}
+Lastly, we used the linear discriminant analysis method (LDA), which
+attempts to model the difference between the classes as linear
+combinations of the features.  LDA is closely related to principal
+component analysis in that it can also be used for dimensionality
+reduction, but we employed LDA only for its capabilities as a linear
+classifier.
+\begin{table}
+  \centering
+  \begin{tabular}[!htbp]{c|c c c c}
+       & precision &recall &$F_1$-score &support \\ \hline
+    n  & 0.72      &0.86   &0.78     &57      \\
+    y  & 0.70      &0.84   &0.76     &61      \\
+    m  & 0.67      &0.19   &0.29     &32      \\ \hline
+    avg& 0.70      &0.71   &0.67     &150     \\
+  \end{tabular}
+  \caption{Reconstructing the training set with linear discriminant method.}
+
+  \begin{tabular}[!htbp]{c|c c c c}
+        & precision &recall &$F_1$-score &support \\ \hline
+    n   & 0.63      &0.83   &0.72     &57      \\
+    y   & 0.60      &0.71   &0.65     &61      \\
+    m   & 0.56      &0.12   &0.20     &32      \\ \hline
+    avg & 0.60      &0.61   &0.57     &150     \\
+  \end{tabular}
+  \caption{LDA performance on the testing set.}
+\end{table}
+Our LDA classifier performed with 60\% precision and 71\% completeness
+for the true flares, which is comparable to the other three methods.
 
 \section{Conclusion}
 \label{sec:conc}
+% summarize progress to date
+
 Ultimately it seems the human element cannot be removed from the
 vetting process, but with the aid of machine learning,\ldots
+
+% motivate using mdwarfs: fewer data samples but also high variability
 % we can decrease the time spent examining
+
+% compare the performance of the 3 classifiers and recommend one to be
+% the best
+
+% next steps: larger training set to improve accuracy of classifiers?
+
+% is there a way to factor in the ones we KNOW we're missing? Maybe
+% there are statistics on that can help us improve the accuracy of our
+% classifier, aside from larger training size.
+
 
 \end{document}

@@ -1,14 +1,15 @@
 \documentclass[11pt]{article}
-\usepackage[margin=1.3in]{geometry}
+\usepackage[margin=1.2in]{geometry}
 % \usepackage{showframe}
 \usepackage{caption}
 \usepackage{float}
 \usepackage{enumerate}
 \usepackage{array}
+\usepackage{graphicx}
 
 \author{Nicole Loncke \& Lucianne Walkowicz}
 \date{\today}
-\title{Interesting Title...Stellar Flares in Kepler}
+\title{(Efficiently) Searching for Stellar Flares in Kepler Mission Data}
 
 \begin{document}
 
@@ -109,25 +110,48 @@ Instead of cycling through the light curves with overplotted flags,
 you may find it helpful to inspect and record whether or not the
 marked events could potentially be stellar flares.  In that case, you
 should use \verb|flareshow()|, which writes user input (either 'y',
-'n', 'm') to two files for later retrieval.  One file contains a
-space-separated table of the Kepler IDs and the corresponding user
-responses to its events.  The other file contains information about
-the length of each event.  These two files work in conjunction to
-gather more information about the potential flares.
+'n', 'm') to two files for later retrieval.  See examples of the
+display in figures \ref{fig:yes}, \ref{fig:no}, and \ref{fig:maybe}.
+\begin{figure}[h!]
+  \caption{A true stellar flare, displayed with flareshow().}
+  \label{fig:yes}
+  \centering
+    \includegraphics[width=\textwidth]{plot_yes_zoom}
+\end{figure}
 
+\begin{figure}[h!]
+  \caption{A falsely flagged event.}
+  \label{fig:no}
+  \centering
+    \includegraphics[width=\textwidth]{plot_no_zoom}
+\end{figure}
+
+\begin{figure}[h!]
+  \caption{An indeterminate event.}
+  \label{fig:maybe}
+  \centering
+    \includegraphics[width=\textwidth]{plot_maybe_zoom}
+\end{figure}
+
+One file contains a space-separated table of the Kepler IDs and the
+corresponding user responses to its events, see Table
+\ref{tab:output}.  The other file contains information about the
+length of each event, as displayed in Table \ref{tab:outputindices}.
+These two files work in conjunction to gather more information about
+the potential flares.
 \begin{table}[h]
   \centering
   \begin{tabular}{l l}
-
-8848271 &  n \\
-8908102 &  n \\
-8953257 &  n  n  n  n  n  n  n  n \\
-9002237 &  n  n  n  y \\
-\end{tabular}
+    8848271 &  n \\
+    8908102 &  n \\
+    8953257 &  n  n  n  n  n  n  n  n \\
+    9002237 &  n  n  n  y \\
+  \end{tabular}
 \caption{Example output.txt file.}
+\label{tab:output}
 \end{table}
 
-\begin{table}[h]
+\begin{table}[!h]
   \centering
   \begin{tabular}{l l}
 
@@ -138,6 +162,7 @@ gather more information about the potential flares.
 9002237 &  3337  4 3547  5 3756  3 3967  4 \\
 \end{tabular}
 \caption{Corresponding example output\_indices.txt file.}
+\label{tab:outputindices}
 \end{table}
 
 Note that before using \verb|flareshow()|, you must have your flags in
@@ -174,14 +199,15 @@ data analysis was just that---as a human, vetting manually takes a lot
 of time.  The IDL flare detection program that produces the flare
 flags is trained to recognize some data metrics but does not correctly
 identify events with high accuracy.  Our human brains allow us to do
-the same thing but with more nuance.  If we could write another
+the same thing but with more nuance.  You can see some examples for
+yourself in figures 1,2, and 3.  If we could write another
 program to recognize the same patterns that humans so easily detect in
 the light curves then we could nearly entirely automate the
 data-gathering process---from the raw light curve to having
 information about flares with high confidence.  To accomplish this
-goal, we employed machine learning techniques to train a variety of
-classifiers on metrics from each potential flare event and their
-respective light curves.
+goal, we trained a variety of classifiers on metrics from each
+potential flare event and their respective light curves.
+
 
 \subsection{Training}
 \label{sec:train}
@@ -365,7 +391,7 @@ classifier.
     m  & 0.67      &0.19   &0.29     &32      \\ \hline
     avg& 0.70      &0.71   &0.67     &150     \\
   \end{tabular}
-  \caption{Reconstructing the training set with linear discriminant method.}
+  \caption{Reconstructing the training set with LDA.}
 
   \begin{tabular}[!htbp]{c|c c c c}
         & precision &recall &$F_1$-score &support \\ \hline
@@ -381,22 +407,37 @@ for the true flares, which is comparable to the other three methods.
 
 \section{Conclusion}
 \label{sec:conc}
-% summarize progress to date
+We set out to gather data about flaring stars in order to explore the
+impact that these stars might have on the conditions of nearby
+planets.  Processing the light curves to identify flares, however,
+required a large human component in the form of looking at each curve
+and manually recording the status of each event.  In an effort to
+automate flare detection, we employed machine learning techniques to
+classify a set of pre-vetted events.  Of the four classifiers
+used---SVM with linear kernel, SVM with radial basis function kernel,
+random forest, and linear discriminant analysis---performance metrics
+suggest that the simple linear support vector machine is the best
+choice for our task, as it has the best precision for the test data.
 
-Ultimately it seems the human element cannot be removed from the
-vetting process, but with the aid of machine learning,\ldots
+There is still much room for performance improvement, however.  As
+with many classification problems, increasing the size of the training
+set can significantly improve prediction accuracy.  Doing so requires
+more labelled data which means we must, ironically, vet more potential
+flares by eye.  As a diagnostic for expected improvement we can plot a
+learning curve (accuracy as a function of training set size) for each
+of the different classifiers.  It may be that the classifiers have
+simply not seen enough variety in the training set to be able to
+classify new inputs. Alternatively, if the learning curves have
+already plateaued with a training set of 150 samples then providing
+more samples won't significantly improve prediction accuracy.
 
-% motivate using mdwarfs: fewer data samples but also high variability
-% we can decrease the time spent examining
+The advantage of being able to test the classifiers on labelled data
+is that we can see how many of the flares are being incorrectly
+identified.  With this knowledge, there may be a way to correct for
+those flares that are misjudged by our algorithms.
 
-% compare the performance of the 3 classifiers and recommend one to be
-% the best
-
-% next steps: larger training set to improve accuracy of classifiers?
-
-% is there a way to factor in the ones we KNOW we're missing? Maybe
-% there are statistics on that can help us improve the accuracy of our
-% classifier, aside from larger training size.
-
+Currently, we have yet to completely remove the human element from
+detecting light curves, but with the the machine learning techniques
+mentioned we have higher hopes for doing so.
 
 \end{document}

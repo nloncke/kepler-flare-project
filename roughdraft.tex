@@ -9,12 +9,17 @@
 
 \author{Nicole Loncke \& Lucianne Walkowicz}
 \date{\today}
-\title{(Efficiently) Searching for Stellar Flares in Kepler Mission Data}
+\title{Efficiently Searching for Stellar Flares in Kepler Mission Data}
 
 \begin{document}
 
 \maketitle{}
 
+% Section 1:
+% A few corrections: Kepler stares at one one part of the sky, and does
+% so for *years* at a time, broken into 3 month chunks. You can refresh
+% your Kepler knowledge at kepler.nasa.gov (and you should probably
+% include a footnote with that URL as a reference). 
 \section{Introduction}
 \label{sec:intro}
 
@@ -28,7 +33,6 @@ properties about the stars themselves.  In this paper we are concerned
 with the flaring behaviors of these nearby stars and techniques we can
 use to better determine their effect on any orbiting planets.
 
-
 \section{Using the Tools}
 \label{sec:tools}
 In order to gather data about to flares, it is necessary to first
@@ -38,6 +42,11 @@ light curve data by a program with rudimentary accuracy.  We have
 written such a program in IDL and must manually verify all of the
 events it flags as flares.  To do so, we have also written a Python
 module, \verb|lightcurves|, to aid in the vetting process.
+
+% Section 2.1 last sentence: this still reads like documentation
+% (because that's where it came from!). Try rephrasing this sentence,
+% perhaps as ``The module functions use the light curve data and flags
+% as inputs for vetting'' or something like that.
 
 \subsection{Formatting}
 \label{sec:format}
@@ -62,24 +71,15 @@ The other fundamental input file is the one containing the potential
 flare events, or ``flags.''  This file contains one column listing
 indices into the time array at the points that mark a suspected event.
 
-% \begin{table}[h]
-%   \centering
-%   \begin{tabular}{>{\itshape}p{0.2\linewidth}l}
-%          350 \\
-%          351 \\
-%          352 \\
-%          370 \\
-%          371 \\
-%          372 \\
-%          373 \\
-%          374 \\
-%          375 \\
-% \end{tabular}
-% \caption{Flags sampled from the file corresponding to Kepler ID 10068383.}
-% \end{table}
-
 Those two files --- the light curve data and the flags --- are all you
 need to start using these tools.
+
+% Section 2.2: I'm seeing what you mean by tense changes here-- the ``if
+% you X'' and ``if your aim is X'' stuff is what makes it still read
+% like documentation! Try taking out sentences like this and replacing
+% them with simple statements of what the function actually *does*, such
+% as ``The ltcurve() function reads a single data file and displays it
+% in a plot for inspection''. 
 
 
 \subsection{Plotting}
@@ -100,8 +100,8 @@ that this function does not return any of the data.  In addition, if
 for each of the Kepler data files you have a set of corresponding
 event flags\footnote{You can generate these flags using
   \texttt{getflags()} and passing it a list of the names of the files
-  holding the flare flags.}, you may use the \verb|flags| kwarg to
-overplot the potential flares.
+  holding the flare flags.}, you may use the \verb|flags| keyword
+argument to overplot the potential flares.
 
 \subsection{Vetting}
 \label{sec:vet}
@@ -190,6 +190,20 @@ function assumes you have vetted the flags already and are only
 providing those about which you would like to find more information
 (ie, you have used \verb|getEvents()|).
 
+% Section 4: a bit of clarity for the intro here: the IDL flare
+% detection program detects parts of the lightcurve where the star
+% becomes brighter suddenly, flagging these events as possible
+% flares. It's not really correct to say that it's trained to do
+% anything-- our classifiers are trained, the event detections are just
+% dumb threshold cuts where the program flags something if it got
+% brighter for a while above some threshold. So what our human brains
+% are doing is similar to what the classifier is doing, but not really
+% what the event detection software is doing. I would try rephrasing and
+% saying something along the lines of that when humans vet the flare
+% events by eye, the brain is comparing the flare event to a set of
+% ideas (a model) of what a real flare should look like in the
+% data. Those ideas can be quantified into metrics, and then used as
+% inputs for the machine classification.
 
 \section{Machine Learning}
 \label{sec:ml}
@@ -208,7 +222,11 @@ information about flares with high confidence.  To accomplish this
 goal, we trained a variety of classifiers on metrics from each
 potential flare event and their respective light curves.
 
-
+% Section 4.1 small rephrase in the 1st sentence: you should probably
+% say something like ``The first task was to make quantitative
+% measurements of features for each flare'' or something, the data
+% itself is ``quantitative'' already. You can use features and metrics
+% interchangeably (I think-- I always do, so hopefully that's correct!)
 \subsection{Training}
 \label{sec:train}
 Our first task was to gather quantitative data about the stellar
@@ -286,6 +304,7 @@ many events in our dataset it is better to correctly identify a small
 number of flares than to find many true flares at the expense of false
 positives.
 
+
 \subsubsection{Support Vector Classification}
 \label{sec:svc}
 For our first attempt we used support vector classification as
@@ -351,7 +370,7 @@ packaged in \verb|sklearn.ensemble|.  The algorithm constructs many
 decision trees based on the inputs it sees during the training phase,
 then uses those trees to predict the categories of unseen
 samples. While it performed superbly on the training set, it performed
-no better than our support vector machines on the training set.
+no better than our support vector machines on the test set.
 
 \begin{table}
   \centering
@@ -405,6 +424,13 @@ classifier.
 Our LDA classifier performed with 60\% precision and 71\% completeness
 for the true flares, which is comparable to the other three methods.
 
+% Conclusions: You should note here that while the human element hasn't
+% been completely removed, the amount of human intervention required is
+% MUCH, much less using this method than it would be. Remember that
+% you've only had to look at 300ish flares-- but there are roughly
+% 30,000 stars we can apply this to for every 3 month chunk of Kepler
+% data over the past five years. That would be impossible to do if
+% humans had to do all the vetting by eye!
 \section{Conclusion}
 \label{sec:conc}
 We set out to gather data about flaring stars in order to explore the
@@ -439,5 +465,11 @@ those flares that are misjudged by our algorithms.
 Currently, we have yet to completely remove the human element from
 detecting light curves, but with the the machine learning techniques
 mentioned we have higher hopes for doing so.
+% Nice work thus far-- it would be cool to include those learning curves
+% if you have them! I realize you have finals coming up but if you get a
+% chance I'd really like to see how they look (and I don't think it
+% would take too long). 
+% Cheers
+% L
 
 \end{document}

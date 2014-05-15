@@ -1,10 +1,11 @@
-from sklearn import svm
-from scipy import stats
+from sklearn import svm, ensemble, lda
+from sklearn.metrics import classification_report, accuracy_score
 from lightcurves import *
+from scipy import stats
 import numpy as np
-import string
+import string, random
 import scipy.interpolate as sp
-from sklearn.metrics import classification_report
+import matplotlib.pyplot as plt
 
 #def shift(l, n):
 #    return l[n:] + l[:n]
@@ -278,3 +279,40 @@ def run_classifier(files, flarefiles, vetfile, classtype="linear"):
                                 target_names=bunch["target_names"])
 
     # return {"bunch": bunch, "predictions": predictions}
+def learning_curve(bunch, classtype="randfor"):
+    """ Generates a learning curve for the classifier specified by
+    classtype when trained on given data (dimensions num_samples x
+    num_feats).
+    
+    Input
+    -----
+
+    """
+    data, target = bunch["data"], bunch["target"]
+    N = len(data)
+    if classtype.strip() == "randfor":
+        clf = ensemble.RandomForestClassifier()
+    elif classtype.strip() == "linear" or classtype == "rbf":
+        clf = svm.SVC(kernel=classtype)
+    elif classtype.strip() == "lda":
+        clf = lda.LDA()
+    else:
+        raise ValueError("Classifier type not recognized. Valid \
+arguments are 'randfor', 'linear', 'rbf', and 'lda'.")
+
+    scores = list()
+    lo, hi = int(0.2 * N), int(0.9 * N)
+    step = int(0.01 * N)
+    print lo, hi
+    for i in xrange(lo, hi, step):
+        train_indices = random.sample(xrange(0,N), i)
+        test_indices = [idx for idx in xrange(N) if idx not in train_indices]
+        clf.fit(data[train_indices], target[train_indices])
+        preds = clf.predict(data[test_indices])
+        score = accuracy_score(target[test_indices], preds)
+        scores.append(score)
+
+    plt.figure()
+    plt.xlabel("Training Set Size")
+    plt.ylabel("Accuracy Score")
+    return plt.plot(range(lo, hi, step), scores, 'g-^')

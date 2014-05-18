@@ -24,153 +24,169 @@
 % include a footnote with that URL as a reference). 
 \section{Introduction}
 \label{sec:intro}
-
 The Kepler Mission is designed to survey our galaxy in the hopes of
-discovering planets in or near the habitable zone of their stars and
-determine how many of the billions of stars in our galaxy have such
-planets. It essentially stares at a relatively small portion of the
-sky for years at a time to gather brightness data about these stars.
-In addition to planet detection, this data can be used to gather
-properties about the stars themselves.  In this paper we are concerned
-with the flaring behaviors of these nearby stars and techniques we can
-use to better determine their effect on any orbiting planets.
+discovering planets in or near the habitable zone of their stars.  In
+doing so, it will become possible to determine how many of the
+billions of stars in our galaxy have such planets. Kepler stares at a
+small portion of the sky for years at a time to gather brightness data
+about these stars.  In addition to planet detection, this data can be
+used to gather properties about the stars themselves.  In this paper
+we are concerned with the flaring behaviors of these nearby stars and
+discovering techniques we can use to better determine their effect on
+the environments of any orbiting planets.
 
-% \section{Using the Tools}
-% \label{sec:tools}
-% In order to gather data about to flares, it is necessary to first
-% correctly identify the stellar flares within the Kepler data.  These
-% events have a very distinct shape and thus can be picked out from the
-% light curve data by a program with rudimentary accuracy.  We have
-% written such a program in IDL and must manually verify all of the
-% events it flags as flares.  To do so, we have also written a Python
-% module, \verb|lightcurves|, to aid in the vetting process.
+\section{The Data and Motivation}
+\label{sec:data}
+The data we chose to investigate are from Quarter 9 of Kepler's
+collection.  This corresponds to the 3-month period from mid-March to
+late June 2011.  Within that time window, we examined M dwarf stars in
+particular.  M dwarfs comprise about 75\% of the stars in our galaxy
+so they are primary candidates for investigation, if only due to their
+widespread representation in our neighborhood and in the universe.
+Furthermore, M dwarfs are highly magnetically active---when magnetic
+field lines snap and reconnect, the resulting outpourings of energy
+can have drastic effects on the conditions of nearby
+planets.\footnote{Hilton et al., ``The Galactic M Dwarf Flare Rate,''
+  2010.}
 
-% % Section 2.1 last sentence: this still reads like documentation
-% % (because that's where it came from!). Try rephrasing this sentence,
-% % perhaps as ``The module functions use the light curve data and flags
-% % as inputs for vetting'' or something like that.
+Our over-arching goal was to collect measurements on the frequency and
+intensity of flares for each light curve.  The process is two-fold:
+first, one must correctly identify the flares in the data; secondly,
+one must compute the frequencies and intensities, then analyze the
+results.  In the following section, we discuss the code we wrote to
+assist in performing these tasks.
 
-% \subsection{Formatting}
-% \label{sec:format}
+% We found that the existing methods for the first step were highly
+% inefficient and spend much of the paper discussing and evaluating
+% our ideas for improvement
 
-% The \verb|lightcurves| module makes some assumptions about the format
-% of the input data.  The original light curve data should be in a file
-% containing a whitespace-separated table with time in the first column
-% and flux in the second.
-% \begin{table}[h]
-%   \centering
-%   \begin{tabular}{>{\itshape}p{0.2\linewidth} >{\itshape}l}
-%        808.51470   &   6338.22 \\
-%        808.53514   &   6340.73 \\
-%        808.55557   &   6346.89 \\
-%        808.57601   &   6341.10 \\
-%        808.59644   &   6340.22 \\
-%   \end{tabular}
-%   \caption{Light curve data sampled from Kepler ID 10068383.}
-% \end{table}
+\section{Our Tools}
+\label{sec:tools}
+One rudimentary method of finding the flares is to flag those points
+in the light curve that have brightness above a certain threshold.  We
+have written a program in IDL that does this and must verify by-eye
+all of the events it flags as flares.  
+% For stronger motivation have some statistic on how well the IDL
+% program does---what percentage of the flagged events did you label
+% as y's?
+To do so, we have also written a Python module, \verb|lightcurves.py|,
+to aid in the vetting process.
 
-% The other fundamental input file is the one containing the potential
-% flare events, or ``flags.''  This file contains one column listing
-% indices into the time array at the points that mark a suspected event.
+\subsection{Formatting}
+\label{sec:format}
+The \verb|lightcurves| module makes some assumptions about the format
+of the input data.  The light curve data should be in a file
+containing a whitespace-separated table with time in the first column
+and flux in the second.
+\begin{table}[h]
+  \centering
+  \begin{tabular}{>{\itshape}p{0.2\linewidth} >{\itshape}l}
+       808.51470   &   6338.22 \\
+       808.53514   &   6340.73 \\
+       808.55557   &   6346.89 \\
+       808.57601   &   6341.10 \\
+       808.59644   &   6340.22 \\
+  \end{tabular}
+  \caption{Light curve data sampled from Kepler ID 10068383.}
+\end{table}
 
-% Those two files --- the light curve data and the flags --- are all you
-% need to start using these tools.
+The other fundamental input file is the one containing the potential
+flare events, or ``flags,'' generated by the IDL program.  This file
+contains one column listing indices into the time array at the points
+that mark a suspected event.  The module functions use the light curve
+data and flags thusly formatted as inputs for vetting.
 
-% % Section 2.2: I'm seeing what you mean by tense changes here-- the ``if
-% % you X'' and ``if your aim is X'' stuff is what makes it still read
-% % like documentation! Try taking out sentences like this and replacing
-% % them with simple statements of what the function actually *does*, such
-% % as ``The ltcurve() function reads a single data file and displays it
-% % in a plot for inspection''. 
+% Section 2.2: I'm seeing what you mean by tense changes here-- the ``if
+% you X'' and ``if your aim is X'' stuff is what makes it still read
+% like documentation! Try taking out sentences like this and replacing
+% them with simple statements of what the function actually *does*, such
+% as ``The ltcurve() function reads a single data file and displays it
+% in a plot for inspection''. 
 
+\subsection{Plotting}
+\label{sec:basic}
+The \verb|ltcurve()| function takes as its primary argument a string
+of the name of the file containing the Kepler data and returns the
+time and brightness arrays.  By default it also displays the light
+curve corresponding to the file on a time vs. brightness plot, but
+this feature can be switched off by passing the function an optional
+argument.
 
-% \subsection{Plotting}
-% \label{sec:basic}
-% If your aim is simply to generate arrays of the light curve data ---
-% one array for time, another for mean-normalized flux --- then use
-% \verb|ltcurve()|.  This function takes as its primary argument a
-% string of the name of the file containing the Kepler data and returns
-% the time and brightness arrays.  By default it also displays the light
-% curve corresponding to the file on a time vs. brightness plot, but
-% this feature can be switched off by passing the function an optional
-% argument.
+The \verb|ltcurves()| function displays multiple light curve files one
+at a time.  Its only required argument is a list or array of filename
+strings. This function also accepts a keyword argument
+\verb|flags|---a list of corresponding event flags for each of the
+Kepler data files---with which it overplots the potential
+flares.\footnote{These flags are generated using \texttt{getflags()}
+  by passing it a list of the names of the files holding the flare
+  flags.}
 
-% If you have \emph{multiple} light curve files and would like to view
-% them one at a time, then \verb|ltcurves()| is more appropriate.  Its
-% only required argument is a list or array of filename strings.  Note
-% that this function does not return any of the data.  In addition, if
-% for each of the Kepler data files you have a set of corresponding
-% event flags\footnote{You can generate these flags using
-%   \texttt{getflags()} and passing it a list of the names of the files
-%   holding the flare flags.}, you may use the \verb|flags| keyword
-% argument to overplot the potential flares.
+\subsection{Vetting}
+\label{sec:vet}
 
-% \subsection{Vetting}
-% \label{sec:vet}
+Instead of cycling through the light curves with overplotted flags,
+you may find it helpful to inspect and record whether or not the
+marked events could potentially be stellar flares.  In that case, you
+should use \verb|flareshow()|, which writes user input (either 'y',
+'n', 'm') to two files for later retrieval.  See examples of the
+display in figures \ref{fig:yes}, \ref{fig:no}, and \ref{fig:maybe}.
+\begin{figure}[h!]
+  \caption{A true stellar flare, displayed with flareshow().}
+  \label{fig:yes}
+  \centering
+    \includegraphics[width=\textwidth]{plot_yes_zoom}
+\end{figure}
 
-% Instead of cycling through the light curves with overplotted flags,
-% you may find it helpful to inspect and record whether or not the
-% marked events could potentially be stellar flares.  In that case, you
-% should use \verb|flareshow()|, which writes user input (either 'y',
-% 'n', 'm') to two files for later retrieval.  See examples of the
-% display in figures \ref{fig:yes}, \ref{fig:no}, and \ref{fig:maybe}.
-% \begin{figure}[h!]
-%   \caption{A true stellar flare, displayed with flareshow().}
-%   \label{fig:yes}
-%   \centering
-%     \includegraphics[width=\textwidth]{plot_yes_zoom}
-% \end{figure}
+\begin{figure}[h!]
+  \caption{A falsely flagged event.}
+  \label{fig:no}
+  \centering
+    \includegraphics[width=\textwidth]{plot_no_zoom}
+\end{figure}
 
-% \begin{figure}[h!]
-%   \caption{A falsely flagged event.}
-%   \label{fig:no}
-%   \centering
-%     \includegraphics[width=\textwidth]{plot_no_zoom}
-% \end{figure}
+\begin{figure}[h!]
+  \caption{An indeterminate event.}
+  \label{fig:maybe}
+  \centering
+    \includegraphics[width=\textwidth]{plot_maybe_zoom}
+\end{figure}
 
-% \begin{figure}[h!]
-%   \caption{An indeterminate event.}
-%   \label{fig:maybe}
-%   \centering
-%     \includegraphics[width=\textwidth]{plot_maybe_zoom}
-% \end{figure}
+One file contains a space-separated table of the Kepler IDs and the
+corresponding user responses to its events, see Table
+\ref{tab:output}.  The other file contains information about the
+length of each event, as displayed in Table \ref{tab:outputindices}.
+These two files work in conjunction to gather more information about
+the potential flares.
+\begin{table}[h]
+  \centering
+  \begin{tabular}{l l}
+    8848271 &  n \\
+    8908102 &  n \\
+    8953257 &  n  n  n  n  n  n  n  n \\
+    9002237 &  n  n  n  y \\
+  \end{tabular}
+\caption{Example output.txt file.}
+\label{tab:output}
+\end{table}
 
-% One file contains a space-separated table of the Kepler IDs and the
-% corresponding user responses to its events, see Table
-% \ref{tab:output}.  The other file contains information about the
-% length of each event, as displayed in Table \ref{tab:outputindices}.
-% These two files work in conjunction to gather more information about
-% the potential flares.
-% \begin{table}[h]
-%   \centering
-%   \begin{tabular}{l l}
-%     8848271 &  n \\
-%     8908102 &  n \\
-%     8953257 &  n  n  n  n  n  n  n  n \\
-%     9002237 &  n  n  n  y \\
-%   \end{tabular}
-% \caption{Example output.txt file.}
-% \label{tab:output}
-% \end{table}
+\begin{table}[!h]
+  \centering
+  \begin{tabular}{l l}
 
-% \begin{table}[!h]
-%   \centering
-%   \begin{tabular}{l l}
+8848271 &  3735 03 \\
+8908102 &  1757 03 \\
+8953257 &  1454  6 1610  7 1890  4 2359  3 2516  4 2829  5 2985  6
+3265  5 \\
+9002237 &  3337  4 3547  5 3756  3 3967  4 \\
+\end{tabular}
+\caption{Corresponding example output\_indices.txt file.}
+\label{tab:outputindices}
+\end{table}
 
-% 8848271 &  3735 03 \\
-% 8908102 &  1757 03 \\
-% 8953257 &  1454  6 1610  7 1890  4 2359  3 2516  4 2829  5 2985  6
-% 3265  5 \\
-% 9002237 &  3337  4 3547  5 3756  3 3967  4 \\
-% \end{tabular}
-% \caption{Corresponding example output\_indices.txt file.}
-% \label{tab:outputindices}
-% \end{table}
-
-% Note that before using \verb|flareshow()|, you must have your flags in
-% the proper format, generated by \verb|getflags()|.  This helper
-% function outputs a nested list of event indices given a list of the
-% names of the files containing the flags.
+Note that before using \verb|flareshow()|, you must have your flags in
+the proper format, generated by \verb|getflags()|.  This helper
+function outputs a nested list of event indices given a list of the
+names of the files containing the flags.
 
 \section{Initial Approach}
 \label{sec:initial}

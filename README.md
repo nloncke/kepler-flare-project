@@ -45,3 +45,12 @@ Current task list:
 22 Apr 2014: Revised draft due. As above, but with results from classifier and initial conclusions.
 
 6 May 2014: Final Report due to Planets & Life Program
+
+Next steps: store output of classifier (even as a plain text file)
+            run flareint on everything classifier says is a flare.
+            plot the data
+	    
+	    change learning curve accuracy to account for the yeses
+	    also, do subset selection as per L's email
+	    
+            

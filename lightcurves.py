@@ -482,8 +482,6 @@ def intFlare(filename, flags=None, stride=20, window='flat'):
                              t[loBound:hiBound]))
         maxFlux.append(np.max(resids[loBound:hiBound]))
 
-        # integrated flux
-
     return sums, duration, maxFlux
 
 
@@ -549,8 +547,6 @@ def getEvents(file1, file2, option='y'):
 
     return flags
 
-
-# share files with lmwalkowicz (documentation, code)
 
 # include formatting for each file (the outputs of our functions)
 

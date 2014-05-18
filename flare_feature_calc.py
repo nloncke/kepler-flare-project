@@ -1,14 +1,11 @@
 from sklearn import svm, ensemble, lda
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn import metrics
 from lightcurves import *
 from scipy import stats
 import numpy as np
 import string, random
 import scipy.interpolate as sp
 import matplotlib.pyplot as plt
-
-#def shift(l, n):
-#    return l[n:] + l[:n]
 
 def window(beg, end, width, maxindex):
     """Generates a window around beg:end with at most +/-width points
@@ -275,7 +272,7 @@ def run_classifier(files, flarefiles, vetfile, classtype="linear"):
     predictions = clf.predict(bunch["data"])
     # hits = predictions == bunch["target"]
 
-    print classification_report(bunch["target"],predictions,
+    print metrics.classification_report(bunch["target"],predictions,
                                 target_names=bunch["target_names"])
 
     # return {"bunch": bunch, "predictions": predictions}
@@ -292,7 +289,7 @@ def learning_curve(bunch, classtype="randfor"):
     N = len(data)
     if classtype.strip() == "randfor":
         clf = ensemble.RandomForestClassifier()
-    elif classtype.strip() == "linear" or classtype == "rbf":
+    elif classtype.strip() == "linear" or classtype.strip() == "rbf":
         clf = svm.SVC(kernel=classtype)
     elif classtype.strip() == "lda":
         clf = lda.LDA()
@@ -309,10 +306,18 @@ arguments are 'randfor', 'linear', 'rbf', and 'lda'.")
         test_indices = [idx for idx in xrange(N) if idx not in train_indices]
         clf.fit(data[train_indices], target[train_indices])
         preds = clf.predict(data[test_indices])
-        score = accuracy_score(target[test_indices], preds)
+        score = metrics.accuracy_score(target[test_indices], preds)
         scores.append(score)
 
     plt.figure()
+    if classtype.strip() == "randfor":
+        plt.title("Learning Curve for Random Forest Classifier")
+    elif classtype.strip() == "linear":
+        plt.title("Learning Curve for SVM with Linear Kernel")
+    elif classtype.strip() == "rbf":
+        plt.title("Learning Curve for SVM with RBF Kernel")
+    elif classtype.strip() == "lda":
+        plt.title("Learning Curve for LDA Classifier")
     plt.xlabel("Training Set Size")
     plt.ylabel("Accuracy Score")
     return plt.plot(range(lo, hi, step), scores, 'g-^')

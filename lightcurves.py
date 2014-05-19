@@ -503,7 +503,6 @@ def getEvents(file1, file2, option='y'):
     lineLength = len(vetTokens)
 
     flags = list()
-    flags.append(list())
     # loop through ynm file
     while lineLength > 0:
         kid = vetTokens[0]
@@ -528,6 +527,7 @@ def getEvents(file1, file2, option='y'):
 
         # traverse token arrays
         for i in range(1, len(vetTokens)):
+            kidict = {'id': kid, 'flags': list()}
             # if y or m, generate flags:
             if vetTokens[i] == 'n':
                 continue
@@ -538,10 +538,10 @@ def getEvents(file1, file2, option='y'):
                 start = int(infoTokens[idx]) # beginning of run
                 duration = int(infoTokens[idx + 1])
                 for t in range(duration): 
-                    flags[-1].append(start + t) # append to last nested list
+                    kidict["flags"].append(start + t) # append to last nested list
 
         # update for next loop iteration
-        flags.append(list())
+        flags.append(kidict)
         vetTokens = f.readline().split()
         lineLength = len(vetTokens)
 
@@ -550,10 +550,5 @@ def getEvents(file1, file2, option='y'):
 
 # include formatting for each file (the outputs of our functions)
 
-# mostly K stars due to Kepler's mission.  Some hotter and cooler
-# stars
-# included.  Start with M stars? And compare against hotter K's later.
-
-# file 20 in the hotjs set is not too variable; good for testing
 # note to self: #13 is amazing, kid11546211
 # super bonus: no return on ynm, or when switching to new curve

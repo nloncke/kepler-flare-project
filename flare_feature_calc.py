@@ -231,8 +231,8 @@ def vetfile_to_dict(vetfile):
             if tokens[0].isdigit():
                 responses[tokens[0]] = tokens[1:]
             else:
-                # is there a way to issue a warning and continue with
-                # processing the rest of the lines in the file?
+                # issue a warning and continue with the rest of the
+                # lines in the file?
                 raise ValueError('{} is not a valid Kepler id.'.format(tokens[0]))
     return responses
 
@@ -320,4 +320,5 @@ arguments are 'randfor', 'linear', 'rbf', and 'lda'.")
         plt.title("Learning Curve for LDA Classifier")
     plt.xlabel("Training Set Size")
     plt.ylabel("Accuracy Score")
+
     return plt.plot(range(lo, hi, step), scores, 'g-^')

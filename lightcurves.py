@@ -16,6 +16,7 @@ flags refers to a nested list of ints.  Axis 0: each light curve; Axis
 
 import commands
 # import utils
+import string
 import itertools
 import numpy as np
 import scipy.interpolate as sp
@@ -31,6 +32,16 @@ def trim(strlist, substr):
         strings[i] = strings[i].replace(substr, '')
     return strings
 
+def getNumeric(word):
+    """Returns a string containing all the digits in word, strips away
+    all non-numeric characters.
+    """
+    alltab=string.maketrans('','')
+    nodigits=alltab.translate(alltab, string.digits)
+    if type(word) == str:
+        return word.translate(alltab, nodigits)
+    if type(word) == list:
+        return [w.translate(alltab, nodigits) for w in word]
 
 def getflags(flarfiles):
     """Given a list of the names of the files holding the flare
@@ -393,10 +404,15 @@ def smooth(x, window_len=11, window='flat'):
         return y[(window_len/2 - 1) : -(window_len/2)]
 
 
-def intFlare(filename, flags=None, stride=20, window='flat'):
+def intFlare(filenames, flags=[], stride=20, window='flat'):
     """Isolates flare events using smoothing and integrates under
-    flare. Returns list of brightness from each event
+    flare. Returns list of brightness from each event.
     """
+    kids = getNumeric(filenames)  # list of kids
+    for d in flags:
+        if d['id'] in kids:
+            filename = filenames[kids.index(d['id'])]
+# this is where you stopped
 
     t, normflux = ltcurve(filename, display=False)
     # if flags, omit the flagged points and interpolate before
@@ -526,8 +542,8 @@ def getEvents(file1, file2, option='y'):
             raise ValueError("Something went wrong with identifying the correct id")
 
         # traverse token arrays
+        kidict = {'id': kid, 'flags': list()}
         for i in range(1, len(vetTokens)):
-            kidict = {'id': kid, 'flags': list()}
             # if y or m, generate flags:
             if vetTokens[i] == 'n':
                 continue

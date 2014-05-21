@@ -115,19 +115,12 @@ def ltcurves(files, flags=None):
         plt.show()
 
         # wait for user input to see next light curve
-        print('Hit n for the next light curve. ')
+        print('Hit return for the next light curve. ')
 
-        if flags is not None:
-            ans = str(raw_input('Does this look like a flare? Say y,n, m.  '))
-            if ans == "n":
-                plt.close()
-            else:
-                print('Really? Now you plotted two curves on the same axes.')
-        else:
-            ans = str(raw_input())
-            if ans != None:
-                plt.close()
-    print("Wow, you looked at them all!  Now go do something else.")
+        ans = str(raw_input())
+        if ans != None:
+            plt.close()
+    print("Wow, you're done.")
     return
 
 

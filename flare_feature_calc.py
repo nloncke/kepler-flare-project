@@ -177,9 +177,10 @@ def feat_dict_to_bunch(flareFeatureArray, vetfile=None):
     for each event):
 
     [..., {'skew':, 'kurtosis':, 'second_deriv':, 'slope':,
-    'slope_ratio':, 'passed_midpt_check':, 'has_consec_points':}, ...]
+    'slope_ratio':, 'passed_midpt_check':, 'has_consec_points':,
+    'flags': }, ...]
 
-    Output:
+    Output
     ------
     bunch: a dictionary containing information about the dataset. Its keys:
       "data" is the array of computed metrics for each event
@@ -188,8 +189,10 @@ def feat_dict_to_bunch(flareFeatureArray, vetfile=None):
       "feature_names" Names for the columns in the data array
     """
 
-    bunch = dict()  # the entire bundle 
-    data = list()   # data array of features
+    bunch = dict()        # the entire bundle 
+    data = list()         # data array of features
+    event_flags = list()  # nested list of flags
+    kids = list()         # list of ids, parallel to data and event_flags
     if vetfile: # we got labelled data
         all_vets = vetfile_to_dict(vetfile)
         target = list()
@@ -206,6 +209,8 @@ def feat_dict_to_bunch(flareFeatureArray, vetfile=None):
                      flare["skew"], flare["slope"], flare["slope_ratio"]]
             flarespecs.extend(feats) # join flare with curve template
             data.append(flarespecs)  # add flare data to array
+            event_flags.append(flare["flagged"])
+            kids.append(curve["id"])
 
         if vetfile: # if labelled data
             default = ['m'] * curve["num_events"]
@@ -218,6 +223,8 @@ def feat_dict_to_bunch(flareFeatureArray, vetfile=None):
                               "has_consec_points","kurtosis",
                               "passed_midpt_check", "second_deriv",
                               "skew", "slope", "slope_ratio"]
+    bunch["flags"] = event_flags
+    bunch["ids"] = kids
     if vetfile:
         bunch["target"] = vets_to_ints(target)
         bunch["target_names"] = np.array(['n','y','m'])
@@ -272,17 +279,26 @@ def overlap(dictlist, vetfile):
 
 def run_classifier(flare_features, vetfile, classtype="linear", save=False):
     """ Script for training classifier and testing on training inputs.
+
     Input:
     -----
     flare_features: the output of flareFeatures()
     """
 
     labelled, unseen = overlap(flare_features, vetfile)
-    train = feat_dict_to_bunch(data, vetfile)
+    train = feat_dict_to_bunch(labelled, vetfile)
     test = feat_dict_to_bunch(unseen)
 
     # train classifier, test on unseen data
-    clf = svm.SVC(kernel=classtype)
+    if classtype.strip() == "randfor":
+        clf = ensemble.RandomForestClassifier()
+    elif classtype.strip() == "linear" or classtype.strip() == "rbf":
+        clf = svm.SVC(kernel=classtype)
+    elif classtype.strip() == "lda":
+        clf = lda.LDA()
+    else:
+        raise ValueError("Classifier type not recognized. Valid \
+arguments are 'randfor', 'linear', 'rbf', and 'lda'.")
     clf.fit(train["data"], train["target"])
     predictions = clf.predict(test["data"])
     # hits = predictions == bunch["target"]
@@ -291,10 +307,10 @@ def run_classifier(flare_features, vetfile, classtype="linear", save=False):
         with open("out", 'wb') as f:
             pickle.dump(clf, f)
 
-    print metrics.classification_report(bunch["target"],predictions,
-                                target_names=bunch["target_names"])
+    # print metrics.classification_report(bunch["target"],predictions,
+    #                             target_names=bunch["target_names"])
 
-    # return {"bunch": bunch, "predictions": predictions}
+    return {"test": test, "train": train, "preds": predictions}
 
 def learning_curve(bunch, classtype="randfor"):
     """ Generates a learning curve for the classifier specified by

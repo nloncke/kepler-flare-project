@@ -17,7 +17,6 @@ flags refers to a nested list of ints.  Axis 0: each light curve; Axis
 import commands
 # import utils
 import string
-import itertools
 import numpy as np
 import scipy.interpolate as sp
 import scipy.integrate as si
@@ -165,8 +164,7 @@ def kid_idx(vetfile, files):
     return -1                   # last vetted file isn't in list
 
 
-def flareshow(files, start=0, flags=None, vet=False,
-              output='output.txt'):
+def flareshow(files, start=0, flags=None, vet=False, output='output.txt'):
     """Overplots the potential flares on their light curves, given a
     list of the names of the files containing brightness data and a
     nested list of the event indices.  Begins displaying from
@@ -404,101 +402,96 @@ def smooth(x, window_len=11, window='flat'):
         return y[(window_len/2 - 1) : -(window_len/2)]
 
 
-def intFlare(filenames, flags=[], stride=20, window='flat'):
+def intFlare(filenames, flags, stride=20, window='flat', plot=False):
     """Isolates flare events using smoothing and integrates under
     flare. Returns list of brightness from each event.
     """
     kids = getNumeric(filenames)  # list of kids
+    allstats = list()             # output list of dictionaries
     for d in flags:
         if d['id'] in kids:
             filename = filenames[kids.index(d['id'])]
-# this is where you stopped
+            t, normflux = ltcurve(filename, display=False)
+            # omit the flagged points and interpolate before smoothing
+            if d["flags"]:
+                # remove points on either side for better interpolation
+                flags = d["flags"]
+                events = np.flatnonzero(np.diff(flags) - 1)
+                extFlags = list(flags)  # defensive copy with extra flagged points
+                offset = 0              # how many flags have been inserted?
+                for i in events:
+                    extFlags.insert(i+1 + offset, flags[i+1] - 1)  # shave before next
+                    extFlags.insert(i+1 + offset, flags[i] + 1)    # shave after current
+                    offset += 2
+                # corner cases
+                if flags[0] != 0:
+                    extFlags.insert(0, flags[0] - 1)
+                if flags[-1] < len(t) - 1:
+                    extFlags.insert(len(extFlags), flags[-1] + 1)
+                cutT = np.delete(t, extFlags)
+                cutFlux = np.delete(normflux, extFlags)            
+                fflux = sp.interp1d(cutT, cutFlux, kind='nearest') # flux function
+                fsmoothed = smooth(fflux(t), stride, window)
+            else: # no flags argument
+                fsmoothed = smooth(normflux, stride, window)
 
-    t, normflux = ltcurve(filename, display=False)
-    # if flags, omit the flagged points and interpolate before
-    # smoothing
-    if flags != None:
-        # take out a few points on either side for better
-        # interpolation
-        flags = list(itertools.chain.from_iterable(flags))
-        events = np.flatnonzero(np.diff(flags) - 1)
-        extFlags = list(flags)  # defensive copy with extra flagged points
-        offset = 0              # how many flags have been inserted?
-        for i in events:
-            extFlags.insert(i+1 + offset, flags[i+1] - 1)  # shave before next
-            extFlags.insert(i+1 + offset, flags[i] + 1)    # shave after current
-            offset += 2
-        # corner cases
-        if flags[0] != 0:
-            extFlags.insert(0, flags[0] - 1)
-        if flags[-1] < len(t) - 1:
-            extFlags.insert(len(extFlags), flags[-1] + 1)
-        cutT = np.delete(t, extFlags)
-        cutFlux = np.delete(normflux, extFlags)            
-        fflux = sp.interp1d(cutT, cutFlux, kind='nearest') # flux function
-        fsmoothed = smooth(fflux(t), stride, window)
-    else: # no flags argument
-        fsmoothed = smooth(normflux, stride, window)
+            if fsmoothed.size != normflux.size:
+                raise ValueError("Smoothed and original data not of same length.")
 
-    if fsmoothed.size != normflux.size:
-        raise ValueError("Smoothed and original data not of same length.")
+            resids = normflux - fsmoothed # noise and flare events
+            if plot:
+                fig = plt.figure()
+                fig.subplots_adjust(left=.06, bottom=.07, right=.98,
+                                    top=.92, wspace=.1)
 
-    fig = plt.figure()
-    fig.subplots_adjust(left=.06, bottom=.07, right=.98, top=.92,
-    wspace=.1)
-    plt.subplot(121)
-    plt.plot(t, normflux, label='normalized')
-    plt.plot(t[flags], normflux[flags], 'y*')
-    plt.plot(t, fsmoothed, label='{}, stride {}'.format(window,
-    stride))
-    plt.title(filename.partition('.')[0])    # strip extension
-    plt.legend()
+                plt.subplot(121)
+                plt.plot(t, normflux, label='normalized')
+                plt.plot(t[flags], normflux[flags], 'y*')
+                plt.plot(t, fsmoothed, label='{}, stride {}'.format(window,stride))
+                plt.title(filename.partition('.')[0])    # strip extension
+                plt.legend()
+            
+                # plot residuals
+                plt.subplot(122)
+                plt.plot(t, resids, label='{}, stride {}'.format(window, stride))
+                plt.plot(t[flags], resids[flags], 'y*')
+                plt.title(filename.partition('.')[0] + ' events')
+                plt.legend()
 
-    # plot residuals
-    plt.subplot(122)
-    resids = normflux - fsmoothed
-    plt.plot(t, resids, label='{}, stride {}'.format(window, stride))
-    plt.plot(t[flags], resids[flags], 'y*')
-    plt.title(filename.partition('.')[0] + ' events')
-    plt.legend()
+            if d["flags"]:
+                # add 4 or 5 points on either side of event to be integrated over
+                intBounds = np.flatnonzero(np.diff(extFlags) - 1) # bounds of the events
 
-    # now integrate here.
-    # add 4 or 5 points on either side of event to be integrated over
-    intBounds = np.flatnonzero(np.diff(extFlags) - 1) # bounds of the events
+                stats = list()      # 2D array for each event
+                for i in range(intBounds.size + 1):
+                    if intBounds.size == 0:
+                        beg = 0
+                        end = -1
+                    elif i == 0:
+                        beg = 0
+                        end = intBounds[i]
+                    elif i == intBounds.size:
+                        beg = intBounds[i-1] + 1
+                        end = -1
+                    else:
+                        beg = intBounds[i-1] + 1
+                        end = intBounds[i]
 
-    sums = list()                    # result of integration
-    duration = list()                # time elapsed during each event
-    maxFlux = list()                 # max flux value for each event
-    for i in range(intBounds.size + 1):
-        if intBounds.size == 0:
-            beg = 0
-            end = -1
-        elif i == 0:
-            beg = 0
-            end = intBounds[i]
-        elif i == intBounds.size:
-            beg = intBounds[i-1] + 1
-            end = -1
-        else:
-            beg = intBounds[i-1] + 1
-            end = intBounds[i]
+                    loBound = extFlags[beg] - 4   # integrate up to four points before event
+                    hiBound = extFlags[end] + 4   # integrate up to four points after event
 
-        loBound = extFlags[beg] - 4   # integrate up to four points before event
-        hiBound = extFlags[end] + 4   # integrate up to four points after event
+                    if ((loBound < 0) or (hiBound >= resids.size)):
+                        raise ValueError("Invalid bounds of integration")
 
-        if ((loBound < 0) or (hiBound >= resids.size)):
-            raise ValueError("Invalid bounds of integration")
+                    # duration (for now, just number of points * 0.5 hrs)
+                    # account for +1 flag on either side of integration window
+                    duration = 0.5 * (extFlags[end] - extFlags[beg] - 1)
+                    sums = si.trapz(resids[loBound:hiBound], t[loBound:hiBound])
+                    max_flux = np.max(resids[loBound:hiBound])
+                    stats.append([sums, max_flux, duration])
 
-        # duration (for now, just number of points * 0.5 hrs)
-        # print('beg: {0}; end: {1}'.format(extFlags[beg],
-        # extFlags[end]))
-        # account for +1 flag on either side of integration window
-        duration.append(0.5 * (extFlags[end] - extFlags[beg] - 1))
-        sums.append(si.trapz(resids[loBound:hiBound],
-                             t[loBound:hiBound]))
-        maxFlux.append(np.max(resids[loBound:hiBound]))
-
-    return sums, duration, maxFlux
+                allstats.append({'id': d['id'], 'stats': np.array(stats)})
+    return allstats
 
 
 def getEvents(file1, file2, option='y'):

@@ -66,7 +66,6 @@ def getflags(flarfiles):
             flags.append([])
     return flags
 
-
 def ltcurve(filename, display=True, style='-'):
     """Plots light curves from a single kepler data file (col1 = time;
     col2 = brightness).  Returns the time and brightness data arrays.

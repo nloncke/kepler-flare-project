@@ -3,7 +3,7 @@ from sklearn import metrics
 from lightcurves import *
 from scipy import stats
 import numpy as np
-import string, random
+import string, random, pickle
 import scipy.interpolate as sp
 import matplotlib.pyplot as plt
 
@@ -34,7 +34,8 @@ def flareFeatures(files, flarfiles):
     for each event):
 
     [..., {'skew':, 'kurtosis':, 'second_deriv':, 'slope':,
-    'slope_ratio':, 'passed_midpt_check':, 'has_consec_points':}, ...]
+    'slope_ratio':, 'passed_midpt_check':, 'has_consec_points':,
+    'flags': }, ...]
     """
 
     # generate list of flare flag files
@@ -131,6 +132,7 @@ def flareFeatures(files, flarfiles):
 
             # add entry to flare_features list
             event_dict = dict()
+            event_dict['flagged'] = range(beg,end)
             event_dict['skew'] = flareSkew
             event_dict['kurtosis'] = flareKurt
             event_dict['second_deriv'] = second_deriv
@@ -166,7 +168,7 @@ def feat_dict_to_bunch(flareFeatureArray, vetfile=None):
     vetfile is provided, assumes that all the flares in the feature
     array have been vetted with responses recorded in vetfile.
 
-    Input
+    Input:
     -----
     [..., {'id':, 'num_events':, 'amplitude':, 'stddev':,
         'flare_features':}, ...]
@@ -177,9 +179,13 @@ def feat_dict_to_bunch(flareFeatureArray, vetfile=None):
     [..., {'skew':, 'kurtosis':, 'second_deriv':, 'slope':,
     'slope_ratio':, 'passed_midpt_check':, 'has_consec_points':}, ...]
 
-    Output
+    Output:
     ------
-    [stuff]
+    bunch: a dictionary containing information about the dataset. Its keys:
+      "data" is the array of computed metrics for each event
+      "target" is a 1D integer array of the labels for each event
+      "target_names" The names of the classes
+      "feature_names" Names for the columns in the data array
     """
 
     bunch = dict()  # the entire bundle 
@@ -238,7 +244,7 @@ def vetfile_to_dict(vetfile):
 
 
 def vets_to_ints(target):
-    """ Prepares target array of ynm to integers:
+    """ Maps target array of ynm to integers:
     n -> 0
     y -> 1
     m -> 2
@@ -253,29 +259,43 @@ def vets_to_ints(target):
 def overlap(dictlist, vetfile):
     """ Collects the dictionaries in dictlist containing key-value
     pairs id: kid, where 'kid' is the first token per line in vetfile.
+    Returns the intersection of the two sets and the relative
+    complement of vetfile with respect to dictlist.
     """
     with open(vetfile, 'r') as f:
         kids = [line.split()[0] for line in f]
-    return [item for item in dictlist if item["id"] in kids]
+
+    joint = [item for item in dictlist if item["id"] in kids]
+    comp  = [item for item in dictlist if item not in joint]
+    return joint, comp
 
 
-def run_classifier(files, flarefiles, vetfile, classtype="linear"):
-    """ Script for training classifier and testing on training inputs
+def run_classifier(flare_features, vetfile, classtype="linear", save=False):
+    """ Script for training classifier and testing on training inputs.
+    Input:
+    -----
+    flare_features: the output of flareFeatures()
     """
-    allFeats = flareFeatures(files, flarefiles)
-    data = overlap(allFeats, vetfile)
-    bunch = feat_dict_to_bunch(data, vetfile)
 
-    # train classifier, test on labelled data
+    labelled, unseen = overlap(flare_features, vetfile)
+    train = feat_dict_to_bunch(data, vetfile)
+    test = feat_dict_to_bunch(unseen)
+
+    # train classifier, test on unseen data
     clf = svm.SVC(kernel=classtype)
-    clf.fit(bunch["data"], bunch["target"])
-    predictions = clf.predict(bunch["data"])
+    clf.fit(train["data"], train["target"])
+    predictions = clf.predict(test["data"])
     # hits = predictions == bunch["target"]
+
+    if save:
+        with open("out", 'wb') as f:
+            pickle.dump(clf, f)
 
     print metrics.classification_report(bunch["target"],predictions,
                                 target_names=bunch["target_names"])
 
     # return {"bunch": bunch, "predictions": predictions}
+
 def learning_curve(bunch, classtype="randfor"):
     """ Generates a learning curve for the classifier specified by
     classtype when trained on given data (dimensions num_samples x

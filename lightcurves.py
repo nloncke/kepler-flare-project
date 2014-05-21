@@ -406,8 +406,8 @@ def intFlare(filenames, flaglist, stride=20, window='flat', plot=False):
     """Isolates flare events using smoothing and integrates under
     flare. Returns list of stats from each event.
 
-    Input:
-    -----
+    Inputs:
+    ------
     filenames: list of files containing the brightness data
 
     flaglist: list of dictionaries with keys 'id' and 'flags.' The

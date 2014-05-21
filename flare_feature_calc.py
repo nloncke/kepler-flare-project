@@ -1,5 +1,6 @@
 from sklearn import svm, ensemble, lda
 from sklearn import metrics
+from sklearn.preprocessing import Imputer
 from lightcurves import *
 from scipy import stats
 import numpy as np
@@ -218,7 +219,9 @@ def feat_dict_to_bunch(flareFeatureArray, vetfile=None):
             target.extend(vet)
 
     # package things nicely
-    bunch["data"] = np.array(data)
+    impinf = Imputer(missing_values=np.inf, strategy='median')       # replace infs with average stats
+    impnan = Imputer(missing_values="NaN", strategy='median')       # replace nans with average stats    
+    bunch["data"] = impinf.fit_transform(impnan.fit_transform(np.array(data)))
     bunch["feature_names"] = ["amplitude","num_events","stddev",
                               "has_consec_points","kurtosis",
                               "passed_midpt_check", "second_deriv",
@@ -249,7 +252,6 @@ def vetfile_to_dict(vetfile):
                 raise ValueError('{} is not a valid Kepler id.'.format(tokens[0]))
     return responses
 
-
 def vets_to_ints(target):
     """ Maps target array of ynm to integers:
     n -> 0
@@ -277,7 +279,8 @@ def overlap(dictlist, vetfile):
     return joint, comp
 
 
-def run_classifier(flare_features, vetfile, classtype="linear", save=False):
+def run_classifier(flare_features, vetfile, classtype="linear",
+    save=False, output="out"):
     """ Script for training classifier and testing on training inputs.
 
     Input:
@@ -288,6 +291,7 @@ def run_classifier(flare_features, vetfile, classtype="linear", save=False):
     labelled, unseen = overlap(flare_features, vetfile)
     train = feat_dict_to_bunch(labelled, vetfile)
     test = feat_dict_to_bunch(unseen)
+    print "test matrix has shape {}".format(train["data"].shape)
 
     # train classifier, test on unseen data
     if classtype.strip() == "randfor":
@@ -303,9 +307,13 @@ arguments are 'randfor', 'linear', 'rbf', and 'lda'.")
     predictions = clf.predict(test["data"])
     # hits = predictions == bunch["target"]
 
-    if save:
-        with open("out", 'wb') as f:
-            pickle.dump(clf, f)
+    if save:             # write preds array
+        with open(output, 'w') as f:
+            np.savez(output, preds=predictions, flare_features=test["data"], ids=np.array(test["ids"]))
+
+    # yeses = where(predictions == 1)[0]
+    # nos = where(predictions == 2)[0]
+    # maybes = where(predictions == 2)[0]
 
     # print metrics.classification_report(bunch["target"],predictions,
     #                             target_names=bunch["target_names"])

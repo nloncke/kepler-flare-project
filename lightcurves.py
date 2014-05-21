@@ -124,8 +124,6 @@ def ltcurves(files, flags=None):
     return
 
 
-
-
 def kid_idx(vetfile, files):
     """Reads last kid from vet output file and returns index from
     input list of files.
@@ -395,7 +393,8 @@ def smooth(x, window_len=11, window='flat'):
         return y[(window_len/2 - 1) : -(window_len/2)]
 
 
-def intFlare(filenames, flaglist, stride=20, window='flat', plot=False):
+def intFlare(filenames, flaglist, stride=20, window='flat',
+    plot=False, save=False, output="intstats.out"):
     """Isolates flare events using smoothing and integrates under
     flare. Returns list of stats from each event.
 
@@ -499,7 +498,10 @@ def intFlare(filenames, flaglist, stride=20, window='flat', plot=False):
                     max_flux = np.max(resids[loBound:hiBound])
                     stats.append([sums, max_flux, duration])
 
-                allstats.append({'id': d['id'], 'stats': np.array(stats)})
+                allstats.append({'id': d['id'], 'stats':
+                                     np.array(stats)})
+    if save:
+        np.savez(output, int_stats=allstats)
     return allstats
 
 

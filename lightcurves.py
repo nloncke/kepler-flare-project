@@ -402,13 +402,29 @@ def smooth(x, window_len=11, window='flat'):
         return y[(window_len/2 - 1) : -(window_len/2)]
 
 
-def intFlare(filenames, flags, stride=20, window='flat', plot=False):
+def intFlare(filenames, flaglist, stride=20, window='flat', plot=False):
     """Isolates flare events using smoothing and integrates under
-    flare. Returns list of brightness from each event.
+    flare. Returns list of stats from each event.
+
+    Input:
+    -----
+    filenames: list of files containing the brightness data
+
+    flaglist: list of dictionaries with keys 'id' and 'flags.' The
+    value of 'flags' is a flattened list of indices
+
+    Output:
+    ------
+    allstats: list of dictionaries with keys 'id' and 'stats.'  The
+    value of 'stats' is a num_events x 3 array.
+        Column 1: integrated flux under the event
+        Column 2: maximum flux value of event
+        Column 3: duration of the event (in hours)
     """
+
     kids = getNumeric(filenames)  # list of kids
     allstats = list()             # output list of dictionaries
-    for d in flags:
+    for d in flaglist:
         if d['id'] in kids:
             filename = filenames[kids.index(d['id'])]
             t, normflux = ltcurve(filename, display=False)

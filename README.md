@@ -53,10 +53,6 @@ Next steps: store output of classifier (even as a plain text file)
 	    change learning curve accuracy to account for the yeses
 	    also, do subset selection as per L's email
 	   
-RETRIEVE:
- 1. classifier output
- 2. for each flare, the stats
-
 WORKFLOW:
  1. Run flareFeatures() on all the mdwarf files.  You need to pass a
      list of the filenames and a list of their corresponding flag files.

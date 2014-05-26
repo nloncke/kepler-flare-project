@@ -15,7 +15,6 @@ flags refers to a nested list of ints.  Axis 0: each light curve; Axis
 """
 
 import commands
-# import utils
 import string
 import numpy as np
 import scipy.interpolate as sp

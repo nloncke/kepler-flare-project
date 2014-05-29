@@ -1,26 +1,12 @@
+from utils import *
 from sklearn import svm, ensemble, lda
 from sklearn import metrics
 from sklearn.preprocessing import Imputer
-from lightcurves import *
 from scipy import stats
 import numpy as np
 import string, random, pickle
 import scipy.interpolate as sp
 import matplotlib.pyplot as plt
-
-def window(beg, end, width, maxindex):
-    """Generates a window around beg:end with at most +/-width points
-    on either side.  Takes the maximum index of the array to be
-    indexed into for bounds checking.  Returns tuple (newbeg, newend)
-    or -1 if invalid arguments.
-    """
-    if (beg < 0) or (end >= maxindex):
-        return -1
-
-    maxwidth = min(beg, maxindex-end)
-    real_width = min(width, maxwidth)
-    return (beg-real_width, end+real_width)
-
 
 def flareFeatures(files, flarfiles):
     """ Given a single file containing a list of lightcurve files (arg
@@ -94,10 +80,10 @@ def flareFeatures(files, flarfiles):
 
             # compute window around flare for future operations
             wind_width = 4 
-            [wind_beg, wind_end] = window(beg, end, wind_width, len(flux))
+            [wind_beg, wind_end] = window(beg, end, wind_width, len(flux)-1)
 
             # compute window around flare to be deleted when smoothing lc
-            [ignore_beg, ignore_end] = window(beg, end, 2, len(flux))
+            [ignore_beg, ignore_end] = window(beg, end, 2, len(flux)-1)
             ignore_in_smoothed = ignore_in_smoothed.union(set(range(ignore_beg,ignore_end)))
             
             # skew, kurtosis, mean of 2nd deriv around window
@@ -252,6 +238,7 @@ def vetfile_to_dict(vetfile):
                 raise ValueError('{} is not a valid Kepler id.'.format(tokens[0]))
     return responses
 
+
 def vets_to_ints(target):
     """ Maps target array of ynm to integers:
     n -> 0
@@ -263,20 +250,6 @@ def vets_to_ints(target):
     for i in xrange(len(mapped)):
         mapped[i] = vetmap.get(mapped[i])
     return np.array(mapped)
-
-
-def overlap(dictlist, vetfile):
-    """ Collects the dictionaries in dictlist containing key-value
-    pairs id: kid, where 'kid' is the first token per line in vetfile.
-    Returns the intersection of the two sets and the relative
-    complement of vetfile with respect to dictlist.
-    """
-    with open(vetfile, 'r') as f:
-        kids = [line.split()[0] for line in f]
-
-    joint = [item for item in dictlist if item["id"] in kids]
-    comp  = [item for item in dictlist if item not in joint]
-    return joint, comp
 
 
 def run_classifier(flare_features, vetfile, classtype="linear",
@@ -291,7 +264,7 @@ def run_classifier(flare_features, vetfile, classtype="linear",
     labelled, unseen = overlap(flare_features, vetfile)
     train = feat_dict_to_bunch(labelled, vetfile)
     test = feat_dict_to_bunch(unseen)
-    print "test matrix has shape {}".format(train["data"].shape)
+    # print "test matrix has shape {}".format(train["data"].shape)
 
     # train classifier, test on unseen data
     if classtype.strip() == "randfor":
@@ -319,6 +292,7 @@ arguments are 'randfor', 'linear', 'rbf', and 'lda'.")
     #                             target_names=bunch["target_names"])
 
     return {"test": test, "train": train, "preds": predictions}
+
 
 def learning_curve(bunch, classtype="randfor"):
     """ Generates a learning curve for the classifier specified by

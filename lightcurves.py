@@ -11,35 +11,14 @@ files hold the brightness data.
 
 flags refers to a nested list of ints.  Axis 0: each light curve; Axis
 1: the indices of flare events.
-
 """
 
+import utils
 import commands
-import string
 import numpy as np
 import scipy.interpolate as sp
 import scipy.integrate as si
 import matplotlib.pyplot as plt
-
-def trim(strlist, substr):
-    """Given a list of strings, returns a copy with all occurences of
-    substr removed from each list entry.
-    """ 
-    strings = list(strlist)
-    for i in range(len(strings)):
-        strings[i] = strings[i].replace(substr, '')
-    return strings
-
-def getNumeric(word):
-    """Returns a string containing all the digits in word, strips away
-    all non-numeric characters.
-    """
-    alltab=string.maketrans('','')
-    nodigits=alltab.translate(alltab, string.digits)
-    if type(word) == str:
-        return word.translate(alltab, nodigits)
-    if type(word) == list:
-        return [w.translate(alltab, nodigits) for w in word]
 
 def getflags(flarfiles):
     """Given a list of the names of the files holding the flare
@@ -398,7 +377,7 @@ def intFlare(filenames, flaglist, stride=20, window='flat',
 
     Inputs:
     ------
-    filenames: list of files containing the brightness data
+    filenames: file containing a list of files that contain the brightness data
 
     flaglist: list of dictionaries with keys 'id' and 'flags.' The
     value of 'flags' is a flattened list of indices
@@ -412,11 +391,13 @@ def intFlare(filenames, flaglist, stride=20, window='flat',
         Column 3: duration of the event (in hours)
     """
 
-    kids = getNumeric(filenames)  # list of kids
+    with open(filenames, 'r') as f:
+        files = [line.strip() for line in f]
+    kids = getNumeric(files)  # list of kids
     allstats = list()             # output list of dictionaries
     for d in flaglist:
         if d['id'] in kids:
-            filename = filenames[kids.index(d['id'])]
+            filename = files[kids.index(d['id'])]
             t, normflux = ltcurve(filename, display=False)
             # omit the flagged points and interpolate before smoothing
             if d["flags"]:
@@ -482,11 +463,10 @@ def intFlare(filenames, flaglist, stride=20, window='flat',
                     else:
                         beg = intBounds[i-1] + 1
                         end = intBounds[i]
-
-                    loBound = extFlags[beg] - 4   # integrate up to four points before event
-                    hiBound = extFlags[end] + 4   # integrate up to four points after event
-
+                        
+                    [loBound, hiBound] = utils.window(beg, end, 4, len(t))
                     if ((loBound < 0) or (hiBound >= resids.size)):
+                        print d['id']
                         raise ValueError("Invalid bounds of integration")
 
                     # duration (for now, just number of points * 0.5 hrs)

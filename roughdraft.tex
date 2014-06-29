@@ -7,6 +7,7 @@
 \usepackage{array}
 \usepackage{graphicx}
 \usepackage{setspace}
+\usepackage{hyperref}
 \setstretch{1.2}
 
 \author{Nicole Loncke \& Lucianne Walkowicz}
@@ -27,11 +28,14 @@
 The Kepler Mission is designed to survey our galaxy in the hopes of
 discovering planets in or near the habitable zone of their stars.  In
 doing so, it will become possible to determine how many of the
-billions of stars in our galaxy have such planets. Kepler stares at a
-small portion of the sky for years at a time to gather brightness data
-about these stars.  In addition to planet detection, this data can be
-used to gather properties about the stars themselves.  In this paper
-we are concerned with the flaring behaviors of these nearby stars and
+billions of stars in our galaxy have such planets. Kepler's 0.95-meter
+diameter telescope has been staring at one portion of the sky for 5+
+years to gather brightness data about these stars\footnote{For more
+  information, see http://kepler.nasa.gov/ and
+  http://www.nasa.gov/mission\_pages/kepler/overview/index.html}.  In
+addition to planet detection, this data can be used to gather
+properties about the $10^5$ stars within the field.  In this paper we
+are concerned with the flaring behaviors of these nearby stars and
 discovering techniques we can use to better determine their effect on
 the environments of any orbiting planets.
 
@@ -192,7 +196,7 @@ names of the files containing the flags.
 \label{sec:initial}
 In order to gather data about the flares, it is necessary to first
 correctly identify the stellar flares within the Kepler data.  These
-events have a very distinct shape and thus can be picked out from the
+events have a very distinct shape and thus can be picked out in the
 light curve data by a simple program with rudimentary accuracy.  We
 have written such a program in IDL that takes note of points in the
 light curve where the brightness exceeds a certain threshold.  Before
@@ -204,49 +208,41 @@ Python module, \verb|lightcurves.py|.  It contains functions that
 display the light curves with the flagged points marked, in addition
 to accepting and recording user input about whether the flags are
 truly flare events.  We employed a combination of these tools to
-inspect over 300 events, \{\} of which we determined to be flares.
+inspect 212 light curves.  Out of the 315 events in that dataset that
+were marked as potential flares using thresholding, we conclusively
+determined 126 of them are flares.  Of the remaining events, 117 are
+definitely not flares and the balance are indeterminate.
 
 
-% Section 4: a bit of clarity for the intro here: the IDL flare
-% detection program detects parts of the lightcurve where the star
-% becomes brighter suddenly, flagging these events as possible
-% flares. It's not really correct to say that it's trained to do
-% anything-- our classifiers are trained, the event detections are just
-% dumb threshold cuts where the program flags something if it got
-% brighter for a while above some threshold. So what our human brains
-% are doing is similar to what the classifier is doing, but not really
-% what the event detection software is doing. I would try rephrasing and
-% saying something along the lines of that when humans vet the flare
-% events by eye, the brain is comparing the flare event to a set of
-% ideas (a model) of what a real flare should look like in the
-% data. Those ideas can be quantified into metrics, and then used as
-% inputs for the machine classification.
 
 \section{Machine Learning}
 \label{sec:ml}
 
 This method of visually checking each event is slow, however, and the
-major bottleneck for data analysis. The IDL flare detection program
-that produces the flare flags recognizes some data metrics but does
-not correctly identify events with high accuracy.  Our human brains
-allow us to do the same thing but with more nuance.  You can see some
-examples for yourself in figures 1,2, and 3.  If we could write
-another program to recognize the same patterns that humans so easily
-detect in the light curves then we could nearly entirely automate the
-data-gathering process---from the raw light curve to having
-information about flares with high confidence.  To accomplish this
-goal, we trained a variety of classifiers on metrics from each
+major bottleneck for data analysis. Because the IDL flare detection
+program that produces the flare flags does not correctly identify
+events with high accuracy, much human effort is devoted to verifying
+its output.  The thresholding performed by the program is only one
+aspect of the process our human brains go through when inspecting
+these light curves.  (See examples in Figures \ref{fig:yes},
+\ref{fig:no}, and \ref{fig:maybe}.)  When we vet the flare events by
+eye, the brain is actually comparing each event to a set of ideas---a
+model---of what a real flare should look like in the data.
+
+If we could write another program to build such a model from
+quantitative metrics then we could train it to recognize the same
+patterns that humans so easily detect in the light curves, thereby
+nearly automating our task---obtaining stellar flare data from the raw
+light curves with high confidence.  To accomplish this goal, we
+trained a variety of machine classifiers on metrics from each
 potential flare event and their respective light curves.
 
-% Section 4.1 small rephrase in the 1st sentence: you should probably
-% say something like ``The first task was to make quantitative
-% measurements of features for each flare'' or something, the data
-% itself is ``quantitative'' already. You can use features and metrics
-% interchangeably (I think-- I always do, so hopefully that's correct!)
+
 \subsection{Training}
 \label{sec:train}
-Our first task was to gather quantitative data about the stellar
-flares to feed into the classifier.  In total we use 10 metrics.
+Our first task was to gather quantitative measurements of features for
+each stellar flare to feed into the classifier.  In total we use 10
+features.
 \begin{enumerate}[(1)]
 \item \emph{amplitude}: the range of the entire light curve.  Stars
   with great stellar variability tend to be more magnetically active
@@ -294,31 +290,35 @@ flares to feed into the classifier.  In total we use 10 metrics.
   of the light curve with this metric.
 \end{enumerate}
 These data were gathered for 315 potential flaring events that we had
-previously labelled by-eye.  Using these samples we formed a training
-set of 150 events and a test set of 165 events.
+previously labelled by-eye.  Using these samples we originally formed
+a training set of 150 events and a test set of 165 events.
 
 \subsection{Classification Performance}
 \label{sec:class}
-We use Python's scikit-learn package for our machine learning
-framework.  While it comes equipped with a suite of regression,
-clustering, and dimensionality-reduction tools, we are only concerned
-with classification.  Our target classes are 'y' for definitely a
-flare, 'n' for not a flare, and 'm' for any indeterminate events.
+We use Python's \verb|scikit-learn| package for our machine learning
+framework\footnote{Scikit-learn: Machine Learning in Python, Pedregosa
+  et al., JMLR 12, pp. 2825-2830, 2011.}.  The package is fully
+equipped with a suite of regression, clustering,
+dimensionality-reduction, and classification tools.  Of the methods
+available, we chose to experiment with support vector machines,
+decision trees, and linear discriminant analysis.  Our target classes
+are `y' for definitely a flare, `n' for not a flare, and `m' for any
+indeterminate events.
 
 To quantitatively compare the classifiers, it is important that we
 define a few statistics related to their performance.  We say the
 \emph{precision}, or \emph{efficiency}, is the fraction of events
-classified as a given type ('y', 'n', 'm') that are truly of that
+classified as a given type (`y', `n', `m') that are truly of that
 type.  The \emph{recall}, or \emph{completeness} of the classifier is
 the fraction of objects that are truly of a given type that it
-classifies as that type.  The $F_1$ score is a weighted average of
+classifies as that type.  The $F_1$\emph{-score} is a weighted average of
 recall and precision.
 
 Though we ideally seek high scores for both precision and recall, for
 our purposes precision is the more important metric.  Because we have
-many events in our dataset it is better to correctly identify a small
-number of flares than to find many true flares at the expense of false
-positives.
+many events in our Kepler dataset it is better to correctly identify a
+small number of flares and miss a few than to find many more true
+flares at the expense of false positives.
 
 
 \subsubsection{Support Vector Classification}
@@ -332,6 +332,17 @@ events and then used it to predict the status of 165 events.  This
 classifier had a precision of 63\% for classifying true flare events.
 While the results were better than a coin toss, we sought to improve
 the classifier performance.
+
+Sometimes the data cannot be linearly separated within the given
+feature-space.  Alternate SVM kernels implicitly map the data to
+higher dimensions to find a separating hyperplane.  To do that, we
+incorporated the popular radial basis function (RBF) kernel into our
+support vector machine model.  While support vector classification
+with an RBF kernel does decently when predicting the flares it has
+already seen, it does not outperform when predicting unseen events,
+which is ultimately what is important. The results are charted in
+tables \ref{tab:rbftrain} and \ref{tab:rbftest}.
+
 \begin{table}
   \centering
   \begin{tabular}[!htbp]{c|c c c c}
@@ -344,16 +355,6 @@ the classifier performance.
   \caption{Linear kernel performance with the test set.}
   \label{tab:lintest}
 \end{table}
-
-Sometimes the data cannot be linearly separated within the given
-feature-space.  Alternate SVM kernels implicitly map the data to
-higher dimensions to find a separating hyperplane.  To do that, we
-incorporated the popular radial basis function (RBF) kernel into our
-support vector machine model.  While support vector classification
-with an RBF kernel does decently when predicting the flares it has
-already seen, it does not outperform when predicting unseen events,
-which is ultimately what is important. The results are charted in
-tables \ref{tab:rbftrain} and \ref{tab:rbftest}.
 
 \begin{table}
   \centering
@@ -413,10 +414,12 @@ no better than our support vector machines on the test set.
 \label{sec:lda}
 Lastly, we used the linear discriminant analysis method (LDA), which
 attempts to model the difference between the classes as linear
-combinations of the features.  LDA is closely related to principal
-component analysis in that it can also be used for dimensionality
-reduction, but we employed LDA only for its capabilities as a linear
-classifier.
+combinations of the features
+\footnote{\url{http://www.ics.uci.edu/~welling/classnotes/papers_class/Fisher-LDA.pdf}}.
+LDA is closely related to principal component analysis in that it also
+performs dimensionality reduction, but it uses the given class labels
+to function as a linear classifier. (PCA is an unsupervised technique;
+it does not perform classification.)
 \begin{table}
   \centering
   \begin{tabular}[!htbp]{c|c c c c}
@@ -447,45 +450,73 @@ for the true flares, which is comparable to the other three methods.
 % 30,000 stars we can apply this to for every 3 month chunk of Kepler
 % data over the past five years. That would be impossible to do if
 % humans had to do all the vetting by eye!
+
 \section{Conclusion}
 \label{sec:conc}
 We set out to gather data about flaring stars in order to explore the
 impact that these stars might have on the conditions of nearby
 planets.  Processing the light curves to identify flares, however,
 required a large human component in the form of looking at each curve
-and manually recording the status of each event.  In an effort to
-automate flare detection, we employed machine learning techniques to
-classify a set of pre-vetted events.  Of the four classifiers
-used---SVM with linear kernel, SVM with radial basis function kernel,
-random forest, and linear discriminant analysis---performance metrics
-suggest that the simple linear support vector machine is the best
-choice for our task, as it has the best precision for the test data.
+and manually recording the status of each event.  Our dataset
+consisted of light curves for only 212 stars but there are roughly
+30,000 stars we can analyze for every 3 month chunk of Kepler data
+over the past five years---by-eye vetting is an impractical method in
+the long term.
+
+In an effort to automate flare detection, we employed machine learning
+techniques to classify a set of pre-vetted events.  Of the four
+classifiers used---SVM with linear kernel, SVM with radial basis
+function kernel, random forest, and linear discriminant
+analysis---performance metrics suggest that the simple linear support
+vector machine is the best choice for our task, as it has the best
+precision score for the test data.
 
 There is still much room for performance improvement, however.  As
 with many classification problems, increasing the size of the training
 set can significantly improve prediction accuracy.  Doing so requires
 more labelled data which means we must, ironically, vet more potential
-flares by eye.  As a diagnostic for expected improvement we can plot a
-learning curve (accuracy as a function of training set size) for each
-of the different classifiers.  It may be that the classifiers have
-simply not seen enough variety in the training set to be able to
-classify new inputs. Alternatively, if the learning curves have
-already plateaued with a training set of 150 samples then providing
-more samples won't significantly improve prediction accuracy.
+flares by eye.  As a diagnostic for expected improvement we have
+plotted a learning curve (accuracy as a function of training set size)
+for each of the different classifiers.  See Figures \ref{fig:lc_lin},
+\ref{fig:lc_rf}, and \ref{fig:lc_lda}. These plots show that the
+classifiers have simply not seen enough variety in the training set to
+be able to classify new inputs.  There are no signs of convergence to
+a low error rate.  Had the learning curves already plateaued with a
+training set of 150 samples then providing more samples would not
+significantly improve prediction accuracy.
+
+\begin{figure}[h!]
+  \caption{Learning curve for linear kernel support vector machine.}
+  \label{fig:lc_lin}
+  \centering
+    \includegraphics[width=\textwidth]{learncurve_linear}
+\end{figure}
+
+\begin{figure}[h!]
+  \caption{Learning curve for random forest classifier.}
+  \label{fig:lc_rf}
+  \centering
+    \includegraphics[width=\textwidth]{learncurve_randfor}
+\end{figure}
+
+\begin{figure}[h!]
+  \caption{Learning curve for linear discriminant analysis.}
+  \label{fig:lc_lda}
+  \centering
+    \includegraphics[width=\textwidth]{learncurve_lda}
+\end{figure}
 
 The advantage of being able to test the classifiers on labelled data
 is that we can see how many of the flares are being incorrectly
 identified.  With this knowledge, there may be a way to correct for
-those flares that are misjudged by our algorithms.
+those flares that are misjudged by our algorithms.  Pre-processing the
+data (e.g. scaling the features to be within a similar range) and
+additional data science techniques may help improve our classifiers'
+accuracy\footnote{We plan on investigating some of the measures
+  discussed here:
+  \url{http://www.csie.ntu.edu.tw/~cjlin/papers/guide/guide.pdf}}.
 
 Currently, we have yet to completely remove the human element from
 detecting light curves, but with the the machine learning techniques
-mentioned we have higher hopes for doing so.
-% Nice work thus far-- it would be cool to include those learning curves
-% if you have them! I realize you have finals coming up but if you get a
-% chance I'd really like to see how they look (and I don't think it
-% would take too long). 
-% Cheers
-% L
-
+mentioned we have much higher hopes for doing so.
 \end{document}
